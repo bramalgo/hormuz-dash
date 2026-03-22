@@ -390,8 +390,62 @@ select.fi option{background:var(--bg3);}
   </div>
 
   <div class="panel">
+
     <div class="sec-label" style="margin-bottom:10px;">Event log</div>
     <div id="news-feed"></div>
+  </div>
+
+  <div class="panel" id="alerts-section" style="border-color:rgba(59,130,246,0.2);">
+    <!-- Header row: always visible -->
+    <div style="display:flex;align-items:center;justify-content:space-between;">
+      <div style="display:flex;align-items:center;gap:10px;">
+        <div class="sec-label" style="margin:0;">📡 Telegram alerts</div>
+        <span style="font-family:var(--mono);font-size:10px;" id="alerts-status" style="color:var(--muted2);">Disabled</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px;">
+        <!-- Minimise button (only visible when enabled) -->
+        <button id="alerts-min-btn" onclick="toggleAlertsBody()" style="display:none;font-family:var(--mono);font-size:10px;padding:2px 8px;border:1px solid var(--border2);border-radius:4px;background:transparent;color:var(--muted);cursor:pointer;" title="Minimise">▾</button>
+        <!-- Enable toggle -->
+        <label class="toggle"><input type="checkbox" id="alerts-chk" onchange="toggleAlerts()"><span class="t-slider"></span></label>
+      </div>
+    </div>
+    <!-- Body: collapsible -->
+    <div id="alerts-body" style="display:none;margin-top:12px;">
+      <div style="background:var(--bg3);border:1px solid var(--border);border-radius:6px;padding:12px;margin-bottom:12px;font-size:11px;color:var(--muted2);line-height:1.7;">
+        <strong style="color:var(--text);font-family:var(--mono);font-size:10px;">SETUP (3 steps):</strong><br>
+        1. Message <strong style="color:var(--accent);">@BotFather</strong> on Telegram → /newbot → copy the token<br>
+        2. Message <strong style="color:var(--accent);">@userinfobot</strong> on Telegram — it replies with your user ID (that is your chat ID)<br>
+        3. Paste both below, enable alerts, click <em>Send test message</em>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px;">
+        <div class="fg"><div class="fl">Bot token</div><input class="fi" id="tg-token" type="password" placeholder="123456:ABCdef..." oninput="saveAlertSettings()"></div>
+        <div class="fg"><div class="fl">Chat ID</div><input class="fi" id="tg-chatid" type="text" placeholder="e.g. 123456789" oninput="saveAlertSettings()"></div>
+      </div>
+      <div style="margin-bottom:12px;">
+        <div class="sec-label" style="margin-bottom:6px;">Alert triggers</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;">
+          <label style="display:flex;align-items:center;gap:7px;font-size:11px;color:var(--muted2);cursor:pointer;"><input type="checkbox" id="al-phase" checked onchange="saveAlertSettings()"> Phase change</label>
+          <label style="display:flex;align-items:center;gap:7px;font-size:11px;color:var(--muted2);cursor:pointer;"><input type="checkbox" id="al-brent120" checked onchange="saveAlertSettings()"> Brent above $120</label>
+          <label style="display:flex;align-items:center;gap:7px;font-size:11px;color:var(--muted2);cursor:pointer;"><input type="checkbox" id="al-ceasefire" checked onchange="saveAlertSettings()"> Ceasefire signal</label>
+          <label style="display:flex;align-items:center;gap:7px;font-size:11px;color:var(--muted2);cursor:pointer;"><input type="checkbox" id="al-pi" checked onchange="saveAlertSettings()"> P&I reinstatement</label>
+          <label style="display:flex;align-items:center;gap:7px;font-size:11px;color:var(--muted2);cursor:pointer;"><input type="checkbox" id="al-hormuz40" checked onchange="saveAlertSettings()"> Hormuz 40+ vessels</label>
+          <label style="display:flex;align-items:center;gap:7px;font-size:11px;color:var(--muted2);cursor:pointer;"><input type="checkbox" id="al-daily" onchange="saveAlertSettings()"> Daily summary (8am)</label>
+        </div>
+      </div>
+      <div style="background:var(--bg3);border:1px solid var(--border);border-radius:6px;padding:10px 12px;margin-bottom:10px;font-size:10px;color:var(--muted2);line-height:1.6;">
+        <strong style="color:var(--text);font-family:var(--mono);font-size:9px;">BOT COMMANDS</strong> (send these to your bot on Telegram):<br>
+        <span style="color:var(--accent);font-family:var(--mono);">/summary</span> — full market snapshot<br>
+        <span style="color:var(--accent);font-family:var(--mono);">/phase</span> — current phase + recommendation<br>
+        <span style="color:var(--accent);font-family:var(--mono);">/brent</span> — oil prices<br>
+        <span style="color:var(--accent);font-family:var(--mono);">/strait</span> — Hormuz + shipping data<br>
+        <span style="color:var(--muted);font-size:9px;">Note: commands work while this dashboard tab is open</span>
+      </div>
+      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+        <button class="btn btn-primary" style="font-size:10px;" onclick="sendTestAlert()">Send test message</button>
+        <button class="btn" style="font-size:10px;" onclick="sendDailySummary()">Send summary now</button>
+        <span id="alert-msg" style="font-family:var(--mono);font-size:10px;color:var(--green);"></span>
+      </div>
+    </div>
   </div>
 
 </div>
@@ -1091,7 +1145,7 @@ async function doRefresh(){
     if(bdiD)D.bdi=last(bdiD);
     await fetchHormuz();
     setText('lupd','Updated '+new Date().toLocaleTimeString());
-    save();render();
+    save();render();checkAlertTriggers();
   }catch(e){}
   if(rb)rb.textContent='↻ Refresh';
 }
@@ -1100,13 +1154,317 @@ function doExport(){
   try{var b=new Blob([JSON.stringify(D,null,2)],{type:'application/json'});var a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='hormuz_'+new Date().toISOString().split('T')[0]+'.json';a.click();}catch(e){}
 }
 
+/* ══════════════════════════════════════════
+   TELEGRAM ALERT SYSTEM
+══════════════════════════════════════════ */
+var ALERTS = {
+  enabled: false,
+  bodyOpen: true,
+  token: '',
+  chatId: '',
+  triggers: {phase:true, brent120:true, ceasefire:true, pi:true, hormuz40:true, daily:false},
+  lastPhase: null,
+  lastCeasefire: 'none',
+  lastBrent120: false,
+  lastPiWithdrawn: true,
+  lastHormuz40: false,
+  dailyTimer: null
+};
+
+function saveAlertSettings(){
+  ALERTS.token=($('tg-token')||{}).value||'';
+  ALERTS.chatId=($('tg-chatid')||{}).value||'';
+  ALERTS.triggers.phase=($('al-phase')||{}).checked||false;
+  ALERTS.triggers.brent120=($('al-brent120')||{}).checked||false;
+  ALERTS.triggers.ceasefire=($('al-ceasefire')||{}).checked||false;
+  ALERTS.triggers.pi=($('al-pi')||{}).checked||false;
+  ALERTS.triggers.hormuz40=($('al-hormuz40')||{}).checked||false;
+  ALERTS.triggers.daily=($('al-daily')||{}).checked||false;
+  try{localStorage.setItem('h_alerts',JSON.stringify({
+    enabled:ALERTS.enabled,bodyOpen:ALERTS.bodyOpen,token:ALERTS.token,chatId:ALERTS.chatId,triggers:ALERTS.triggers
+  }));}catch(e){}
+  if(ALERTS.triggers.daily)scheduleDailyAlert();
+  else if(ALERTS.dailyTimer){clearTimeout(ALERTS.dailyTimer);ALERTS.dailyTimer=null;}
+}
+
+function loadAlertSettings(){
+  try{
+    var s=localStorage.getItem('h_alerts');
+    if(!s)return;
+    var p=JSON.parse(s);
+    ALERTS.enabled=p.enabled||false;
+    ALERTS.bodyOpen=p.bodyOpen!==undefined?p.bodyOpen:true;
+    ALERTS.token=p.token||'';
+    ALERTS.chatId=p.chatId||'';
+    if(p.triggers)Object.assign(ALERTS.triggers,p.triggers);
+    // Restore UI
+    var chk=$('alerts-chk');if(chk)chk.checked=ALERTS.enabled;
+    updateAlertsUI();
+    if(ALERTS.token){var t=$('tg-token');if(t)t.value=ALERTS.token;}
+    if(ALERTS.chatId){var c=$('tg-chatid');if(c)c.value=ALERTS.chatId;}
+    ['phase','brent120','ceasefire','pi','hormuz40','daily'].forEach(function(k){
+      var el=$('al-'+k);if(el)el.checked=ALERTS.triggers[k]||false;
+    });
+  }catch(e){}
+}
+
+function updateAlertsUI(){
+  var en=ALERTS.enabled;
+  var st=$('alerts-status');
+  if(st){st.textContent=en?(ALERTS.bodyOpen?'Enabled':'Enabled ✓'):'Disabled';st.style.color=en?'var(--green)':'var(--muted2)';}
+  var mb=$('alerts-min-btn');
+  if(mb)mb.style.display=en?'inline-block':'none';
+  // Show body if enabled and not minimised
+  var body=$('alerts-body');
+  if(body)body.style.display=(en&&ALERTS.bodyOpen)?'block':'none';
+  if(mb)mb.textContent=ALERTS.bodyOpen?'▾':'▸';
+}
+function toggleAlertsBody(){
+  ALERTS.bodyOpen=!ALERTS.bodyOpen;
+  updateAlertsUI();
+  saveAlertSettings();
+}
+function toggleAlerts(){
+  ALERTS.enabled=($('alerts-chk')||{}).checked||false;
+  if(ALERTS.enabled)ALERTS.bodyOpen=true; // open body when first enabled
+  updateAlertsUI();
+  saveAlertSettings();
+  if(ALERTS.enabled&&ALERTS.token&&ALERTS.chatId){
+    ALERTS.lastPhase=calcPhase();
+    ALERTS.lastCeasefire=D.ceasefire;
+    ALERTS.lastBrent120=D.brent>=120;
+    ALERTS.lastPiWithdrawn=D.piWithdrawn;
+    ALERTS.lastHormuz40=D.hormuz>=40;
+    startBotPolling();
+  }
+}
+
+async function sendTelegram(msg){
+  if(!ALERTS.token||!ALERTS.chatId)return false;
+  try{
+    var url='https://api.telegram.org/bot'+ALERTS.token+'/sendMessage';
+    var r=await fetch(url,{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({chat_id:ALERTS.chatId,text:msg,parse_mode:'HTML'})
+    });
+    var d=await r.json();
+    return d.ok===true;
+  }catch(e){return false;}
+}
+
+function alertMsg(id,msg){
+  var el=$(id);
+  if(el){el.textContent=msg;setTimeout(function(){el.textContent='';},4000);}
+}
+
+async function sendTestAlert(){
+  if(!ALERTS.token||!ALERTS.chatId){
+    alertMsg('alert-msg','⚠ Enter token and chat ID first');return;
+  }
+  alertMsg('alert-msg','Sending…');
+  var ph=calcPhase(),p=PHASES[ph];
+  var ok=await sendTelegram(
+    '🛢 <b>Hormuz Dashboard — Test Alert</b>\n\n'+
+    '✅ Connection confirmed\n'+
+    'Current phase: <b>'+p.lbl+' — '+p.name+'</b>\n'+
+    'Brent: <b>$'+D.brent.toFixed(1)+'</b> | Hormuz: <b>'+D.hormuz+' vessels/day</b>\n'+
+    'Ceasefire: <b>'+({none:'None',talks:'Talks underway',announced:'Announced',holding:'Holding'}[D.ceasefire])+'</b>\n\n'+
+    'Alerts active. You will be notified of phase changes and key triggers.'
+  );
+  alertMsg('alert-msg',ok?'✓ Sent successfully':'✗ Failed — check token/chat ID');
+}
+
+async function sendDailySummary(){
+  var ph=calcPhase(),p=PHASES[ph];
+  var a=PHASES[ph].alloc;
+  var day=D.conflictDay||Math.floor((Date.now()-new Date('2026-02-28').getTime())/86400000);
+  var tops=KEYS.filter(function(k){return a[k]>0;}).sort(function(x,y){return a[y]-a[x];});
+  var allocStr=tops.map(function(k){return LBLS[k]+' '+a[k]+'%';}).join(' · ');
+  var msg=
+    '🛢 <b>Hormuz Dashboard — Daily Summary</b>\n'+
+    'Day '+day+' of conflict\n\n'+
+    '📊 <b>Phase: '+p.lbl+' — '+p.name+'</b>\n'+
+    p.rec+'\n\n'+
+    '💰 <b>Markets</b>\n'+
+    'Brent: $'+D.brent.toFixed(1)+' (+'+((D.brent-71.32)/71.32*100).toFixed(0)+'% vs pre-conflict)\n'+
+    'WTI: $'+D.wti.toFixed(1)+' | Gold: $'+Math.round(D.gold).toLocaleString()+'\n'+
+    'BTC: $'+Math.round(D.btc).toLocaleString()+' | SPX: '+Math.round(D.spx).toLocaleString()+'\n\n'+
+    '🚢 <b>Strait</b>\n'+
+    'Hormuz: '+D.hormuz+' vessels/day (need 40+ for Phase 1)\n'+
+    'VLCC rate: $'+Math.round(D.vlcc/1000)+'k/day | BDI: '+D.bdi.toLocaleString()+'\n'+
+    'Carriers: '+D.carriersOut+'/'+D.carriersTotal+' suspended\n'+
+    'P&I: '+(D.piWithdrawn?'Cancelled (all 13 IG clubs)':'Active')+'\n\n'+
+    '🎯 <b>Target allocation</b>\n'+
+    allocStr;
+  var ok=await sendTelegram(msg);
+  if(!ok)alertMsg('alert-msg','✗ Failed — check token/chat ID');
+  else alertMsg('alert-msg','✓ Summary sent');
+}
+
+function scheduleDailyAlert(){
+  if(ALERTS.dailyTimer)clearTimeout(ALERTS.dailyTimer);
+  var now=new Date();
+  var next=new Date(now);
+  next.setHours(8,0,0,0);
+  if(next<=now)next.setDate(next.getDate()+1);
+  var ms=next-now;
+  ALERTS.dailyTimer=setTimeout(function(){
+    if(ALERTS.enabled&&ALERTS.triggers.daily)sendDailySummary();
+    scheduleDailyAlert(); // reschedule for next day
+  },ms);
+}
+
+function checkAlertTriggers(){
+  if(!ALERTS.enabled||!ALERTS.token||!ALERTS.chatId)return;
+
+  var ph=calcPhase();
+
+  // Phase change
+  if(ALERTS.triggers.phase&&ALERTS.lastPhase!==null&&ph!==ALERTS.lastPhase){
+    var old=PHASES[ALERTS.lastPhase],now=PHASES[ph];
+    sendTelegram(
+      '⚡ <b>PHASE CHANGE: '+old.lbl+' → '+now.lbl+'</b>\n\n'+
+      '<b>'+now.name+'</b>\n'+now.rec+'\n\n'+
+      'Brent: $'+D.brent.toFixed(1)+' | Hormuz: '+D.hormuz+' vessels/day\n'+
+      'Ceasefire: '+D.ceasefire+'\n\n'+
+      '🎯 <b>Action required within 24-48h</b>'
+    );
+  }
+  ALERTS.lastPhase=ph;
+
+  // Ceasefire signal
+  if(ALERTS.triggers.ceasefire&&D.ceasefire!==ALERTS.lastCeasefire){
+    if(D.ceasefire!=='none'){
+      sendTelegram(
+        '🕊 <b>CEASEFIRE SIGNAL DETECTED</b>\n\n'+
+        'Status: <b>'+{talks:'Formal talks underway',announced:'Ceasefire announced',holding:'Ceasefire holding'}[D.ceasefire]+'</b>\n\n'+
+        'Brent: $'+D.brent.toFixed(1)+' | Hormuz: '+D.hormuz+' vessels/day\n\n'+
+        '⚡ Phase 2 deployment window may open — monitor closely'
+      );
+    }
+  }
+  ALERTS.lastCeasefire=D.ceasefire;
+
+  // Brent $120+
+  var brent120=D.brent>=120;
+  if(ALERTS.triggers.brent120&&brent120&&!ALERTS.lastBrent120){
+    sendTelegram(
+      '🔴 <b>BRENT ABOVE $120 — BEAR CASE RISK</b>\n\n'+
+      'Brent: <b>$'+D.brent.toFixed(1)+'</b>\n'+
+      'If sustained 3+ days → Bear case allocation\n\n'+
+      '⚠ Consider reverting to Phase 0 if in Phase 1'
+    );
+  }
+  ALERTS.lastBrent120=brent120;
+
+  // P&I reinstatement
+  if(ALERTS.triggers.pi&&!D.piWithdrawn&&ALERTS.lastPiWithdrawn){
+    sendTelegram(
+      '✅ <b>P&I CLUB COVER REINSTATED</b>\n\n'+
+      'At least one IG P&I Club has reinstated war-risk cover.\n'+
+      'This is a Phase 1 trigger.\n\n'+
+      'Hormuz: '+D.hormuz+' vessels/day | Brent: $'+D.brent.toFixed(1)+'\n\n'+
+      '⚡ Review Phase 1 deployment'
+    );
+  }
+  ALERTS.lastPiWithdrawn=D.piWithdrawn;
+
+  // Hormuz 40+ vessels
+  var h40=D.hormuz>=40;
+  if(ALERTS.triggers.hormuz40&&h40&&!ALERTS.lastHormuz40){
+    sendTelegram(
+      '🚢 <b>HORMUZ THRESHOLD: '+D.hormuz+' VESSELS/DAY</b>\n\n'+
+      'Crossed the 40 vessel/day Phase 1 trigger.\n'+
+      'Brent: $'+D.brent.toFixed(1)+'\n\n'+
+      '⚡ Phase 1 deployment may be appropriate — verify P&I status'
+    );
+  }
+  ALERTS.lastHormuz40=h40;
+}
+
+
+/* ── BOT COMMAND POLLING ── */
+var BOT_POLL = {offset:0, timer:null, running:false};
+
+async function pollBotCommands(){
+  if(!ALERTS.enabled||!ALERTS.token||!ALERTS.chatId)return;
+  BOT_POLL.running=true;
+  try{
+    var url='https://api.telegram.org/bot'+ALERTS.token+'/getUpdates?offset='+BOT_POLL.offset+'&timeout=0&limit=5';
+    var r=await fetch(url);
+    var d=await r.json();
+    if(d.ok&&d.result&&d.result.length){
+      d.result.forEach(async function(update){
+        BOT_POLL.offset=update.update_id+1;
+        var msg=update.message||update.channel_post;
+        if(!msg||!msg.text)return;
+        // Only respond to messages from the configured chat
+        if(String(msg.chat.id)!==String(ALERTS.chatId))return;
+        var cmd=(msg.text||'').toLowerCase().trim();
+        if(cmd==='/summary'||cmd==='/summary@'+String(ALERTS.token).split(':')[0]){
+          await sendDailySummary();
+        } else if(cmd==='/phase'){
+          var ph=calcPhase(),p=PHASES[ph];
+          await sendTelegram('📊 <b>'+p.lbl+' — '+p.name+'</b>\n\n'+p.rec+'\n\n'+p.sub);
+        } else if(cmd==='/brent'){
+          await sendTelegram(
+            '🛢 <b>Oil prices</b>\n'+
+            'Brent: <b>$'+D.brent.toFixed(1)+'</b> (+'+((D.brent-71.32)/71.32*100).toFixed(0)+'% vs pre-conflict)\n'+
+            'WTI: <b>$'+D.wti.toFixed(1)+'</b>\n'+
+            'TTF gas: <b>€'+D.ttf.toFixed(1)+'</b>/MWh\n'+
+            'IEA reserves: <b>'+D.ieaMb+'mb</b> released'
+          );
+        } else if(cmd==='/strait'){
+          await sendTelegram(
+            '🚢 <b>Strait of Hormuz</b>\n'+
+            'Vessels: <b>'+D.hormuz+'/day</b> (need 40+ for Phase 1)\n'+
+            'Carriers: <b>'+D.carriersOut+'/'+D.carriersTotal+' suspended</b>\n'+
+            'VLCC rate: <b>$'+Math.round(D.vlcc/1000)+'k/day</b>\n'+
+            'BDI: <b>'+D.bdi.toLocaleString()+'</b>\n'+
+            'P&I: <b>'+(D.piWithdrawn?'Cancelled (all 13 IG clubs)':'Active')+'</b>\n'+
+            'Ceasefire: <b>'+({none:'None',talks:'Talks',announced:'Announced',holding:'Holding'}[D.ceasefire])+'</b>'
+          );
+        } else if(cmd==='/help'){
+          await sendTelegram(
+            '🤖 <b>Hormuz Dashboard Bot</b>\n\n'+
+            '/summary — Full market snapshot\n'+
+            '/phase — Current phase + action\n'+
+            '/brent — Oil prices\n'+
+            '/strait — Hormuz shipping data\n'+
+            '/help — This message'
+          );
+        }
+      });
+    }
+  }catch(e){}
+  BOT_POLL.running=false;
+}
+
+function startBotPolling(){
+  if(BOT_POLL.timer)clearInterval(BOT_POLL.timer);
+  if(!ALERTS.enabled||!ALERTS.token||!ALERTS.chatId)return;
+  // Poll every 10 seconds for commands
+  pollBotCommands();
+  BOT_POLL.timer=setInterval(pollBotCommands,10000);
+}
+
 /* ── BOOT ── everything runs synchronously, no waiting */
 load();
+loadAlertSettings();
 buildCards();
 buildSecurities();
 buildPlaybook();
 buildOverrides();
 render();
+// Set alert baseline so first refresh doesn't fire spurious alerts
+ALERTS.lastPhase=calcPhase();
+ALERTS.lastCeasefire=D.ceasefire;
+ALERTS.lastBrent120=D.brent>=120;
+ALERTS.lastPiWithdrawn=D.piWithdrawn;
+ALERTS.lastHormuz40=D.hormuz>=40;
+if(ALERTS.enabled&&ALERTS.triggers.daily)scheduleDailyAlert();
+if(ALERTS.enabled)startBotPolling();
 
 /* charts load async — render again when ready */
 (function(){
