@@ -30,8 +30,8 @@ body{background:var(--bg);color:var(--text);font-family:var(--sans);font-size:13
 .src-seed{background:var(--amber-bg);color:var(--amber);border:1px solid var(--amber-b);}
 .src-dot{width:5px;height:5px;border-radius:50%;flex-shrink:0;}
 .layout{display:grid;grid-template-columns:290px 1fr;min-height:calc(100vh - var(--th) - var(--tkh));}
-.sidebar{border-right:1px solid var(--border);padding:18px 14px;display:flex;flex-direction:column;gap:18px;position:sticky;top:calc(var(--th) + var(--tkh));height:calc(100vh - var(--th) - var(--tkh));overflow-y:auto;-webkit-overflow-scrolling:touch;}
-.main{padding:18px 22px 18px 14px;display:flex;flex-direction:column;gap:16px;-webkit-overflow-scrolling:touch;}
+.sidebar{border-right:1px solid var(--border);padding:18px 14px;display:flex;flex-direction:column;gap:18px;}
+.main{padding:18px 22px 18px 14px;display:flex;flex-direction:column;gap:16px;}
 .sec-label{font-family:var(--mono);font-size:9px;letter-spacing:0.15em;color:var(--muted);text-transform:uppercase;margin-bottom:7px;}
 .phase-card{border-radius:8px;padding:14px;border:1px solid;}
 .p0{background:var(--blue-bg);border-color:var(--blue-b);}
@@ -147,13 +147,13 @@ select.fi option{background:var(--bg3);}
 }
 @media(max-width:600px){
   #mob-bar{display:flex!important;}
-  :root{--th:68px;--tkh:30px;}
+  :root{--th:72px;--tkh:30px;}
   /* Fix sticky context — remove overflow from elements that break it */
-  .sidebar{overflow:visible!important;-webkit-overflow-scrolling:auto!important;}
-  .main{overflow:visible!important;-webkit-overflow-scrolling:auto!important;}
+  .sidebar{overflow:visible;}
+  .main{overflow:visible;}
   body{overflow-x:hidden;}
   /* Topbar — 2-row on mobile */
-  .topbar{padding:4px 10px 4px;height:auto;flex-direction:column;align-items:stretch;gap:5px;}
+  .topbar{padding:4px 10px;height:72px;flex-direction:column;align-items:stretch;justify-content:center;gap:4px;}
   .topbar>div:first-child{display:flex;align-items:center;justify-content:space-between;width:100%;}
   .logo{display:block!important;font-size:10px!important;letter-spacing:0.08em!important;}
   .conflict-txt{display:none!important;}
@@ -604,6 +604,13 @@ var CARD_GROUPS=[
     {id:'kc-wti',lbl:'WTI crude',val:function(){return'$'+D.wti.toFixed(1);},col:function(){return D.wti>=100?'var(--red)':D.wti>=80?'var(--amber)':'var(--green)';},chg:function(){return fmtChg(D.wti,BASES.wti);},sub:'pre-conflict: $67.80',src:'Yahoo'},
     {id:'kc-ttf',lbl:'EU TTF gas (€/MWh)',val:function(){return'€'+D.ttf.toFixed(1);},col:function(){return D.ttf>65?'var(--red)':D.ttf>40?'var(--amber)':'var(--green)';},chg:function(){return fmtChg(D.ttf,BASES.ttf);},sub:'pre-conflict: ~€30',src:'HormuzTracker'},
   ]},
+  {label:'Shipping & Strait', cards:[
+    {id:'kc-vlcc',lbl:'VLCC TD3C spot rate',val:function(){return D.vlcc?'$'+Math.round(D.vlcc/1000)+'k/day':'—';},col:function(){return D.vlcc>300000?'var(--red)':D.vlcc>150000?'var(--amber)':'var(--text)';},chg:function(){return fmtChg(D.vlcc,BASES.vlcc);},sub:'MEG–China, pre-conflict: ~$63k/day',src:'Baltic'},
+    {id:'kc-hormuz',lbl:'Hormuz vessels/day',val:function(){return String(D.hormuz);},col:function(){return D.hormuz>=40?'var(--green)':'var(--red)';},chg:function(){return{t:D.hormuz>=40?'Phase 1 trigger MET':'Below threshold (40 = Phase 1)',cls:D.hormuz>=40?'down':'up'};},sub:'trigger: 40+ = Phase 1',src:'HormuzTracker'},
+    {id:'kc-carriers',lbl:'Carrier suspensions',val:function(){return D.carriersOut+'/'+D.carriersTotal;},col:function(){return D.carriersOut>=9?'var(--red)':D.carriersOut>=5?'var(--amber)':'var(--green)';},chg:function(){return{t:D.carriersOut>=9?'All major lines halted':D.carriersOut+' lines halted',cls:D.carriersOut>=9?'up':'down'};},sub:'9/9 = full crisis',src:'HormuzTracker'},
+    {id:'kc-bdi',lbl:'Baltic Dry Index',val:function(){return D.bdi.toLocaleString();},col:function(){return D.bdi<BASES.bdi*0.5?'var(--red)':D.bdi<BASES.bdi*0.7?'var(--amber)':'var(--text)';},chg:function(){return fmtChg(D.bdi,BASES.bdi);},sub:'pre-conflict: ~1,850',src:'Yahoo'},
+    {id:'kc-ins',lbl:'P&I Club cover',val:function(){return D.piWithdrawn?'Cancelled':'Active';},col:function(){return D.piWithdrawn?'var(--red)':'var(--green)';},chg:function(){return{t:D.piWithdrawn?'All 13 IG P&I Clubs cancelled war-risk · surcharge: '+D.warRiskRange+'%':'International Group P&I cover active',cls:D.piWithdrawn?'up':'down'};},sub:'Reinstatement = Phase 1 trigger',src:'HormuzTracker'},
+  ]},
   {label:'Macro & Rates', cards:[
     {id:'kc-gold',lbl:'Gold (USD/oz)',val:function(){return'$'+Math.round(D.gold).toLocaleString();},col:function(){return'var(--text)';},chg:function(){return fmtChg(D.gold,BASES.gold);},sub:'safe haven benchmark',src:'Yahoo'},
     {id:'kc-tsy',lbl:'US 10yr yield',val:function(){return D.tsy.toFixed(2)+'%';},col:function(){return D.tsy<4.0?'var(--green)':'var(--text)';},chg:function(){return{t:(D.tsy<4.0?'Below':'Above')+' 4.0% — recession signal',cls:D.tsy<4.0?'down':'up'};},sub:'<4.0% = recession signal',src:'Yahoo'},
@@ -615,15 +622,8 @@ var CARD_GROUPS=[
     {id:'kc-kospi',lbl:'KOSPI (Seoul)',val:function(){return Math.round(D.kospi).toLocaleString();},col:function(){return D.kospi<BASES.kospi?'var(--red)':'var(--text)';},chg:function(){return fmtChg(D.kospi,BASES.kospi);},sub:'circuit breaker: –12% peak',src:'Yahoo'},
     {id:'kc-nikkei',lbl:'Nikkei 225 (Tokyo)',val:function(){return Math.round(D.nikkei).toLocaleString();},col:function(){return D.nikkei<BASES.nikkei?'var(--red)':'var(--text)';},chg:function(){return fmtChg(D.nikkei,BASES.nikkei);},sub:'Japan: 90% ME oil imports',src:'Yahoo'},
     {id:'kc-btc',lbl:'Bitcoin (USD)',val:function(){return'$'+Math.round(D.btc).toLocaleString();},col:function(){return'#f97316';},chg:function(){return fmtChg(D.btc,BASES.btc);},sub:'risk-on / risk-off signal',src:'Yahoo'},
-  ]},
-  {label:'Shipping & Strait', cards:[
-    {id:'kc-vlcc',lbl:'VLCC TD3C spot rate',val:function(){return D.vlcc?'$'+Math.round(D.vlcc/1000)+'k/day':'—';},col:function(){return D.vlcc>300000?'var(--red)':D.vlcc>150000?'var(--amber)':'var(--text)';},chg:function(){return fmtChg(D.vlcc,BASES.vlcc);},sub:'MEG–China, pre-conflict: ~$63k/day',src:'Baltic'},
-    {id:'kc-hormuz',lbl:'Hormuz vessels/day',val:function(){return String(D.hormuz);},col:function(){return D.hormuz>=40?'var(--green)':'var(--red)';},chg:function(){return{t:D.hormuz>=40?'Phase 1 trigger MET':'Below threshold (40 = Phase 1)',cls:D.hormuz>=40?'down':'up'};},sub:'trigger: 40+ = Phase 1',src:'HormuzTracker'},
-    {id:'kc-carriers',lbl:'Carrier suspensions',val:function(){return D.carriersOut+'/'+D.carriersTotal;},col:function(){return D.carriersOut>=9?'var(--red)':D.carriersOut>=5?'var(--amber)':'var(--green)';},chg:function(){return{t:D.carriersOut>=9?'All major lines halted':D.carriersOut+' lines halted',cls:D.carriersOut>=9?'up':'down'};},sub:'9/9 = full crisis',src:'HormuzTracker'},
-    {id:'kc-bdi',lbl:'Baltic Dry Index',val:function(){return D.bdi.toLocaleString();},col:function(){return D.bdi<BASES.bdi*0.5?'var(--red)':D.bdi<BASES.bdi*0.7?'var(--amber)':'var(--text)';},chg:function(){return fmtChg(D.bdi,BASES.bdi);},sub:'pre-conflict: ~1,850',src:'Yahoo'},
-    {id:'kc-ins',lbl:'P&I Club cover',val:function(){return D.piWithdrawn?'Cancelled':'Active';},col:function(){return D.piWithdrawn?'var(--red)':'var(--green)';},chg:function(){return{t:D.piWithdrawn?'All 13 IG P&I Clubs cancelled war-risk · surcharge: '+D.warRiskRange+'%':'International Group P&I cover active',cls:D.piWithdrawn?'up':'down'};},sub:'Reinstatement = Phase 1 trigger',src:'HormuzTracker'},
   ]}
-];
+]
 var CARDS=CARD_GROUPS.reduce(function(a,g){return a.concat(g.cards);},[]);
 
 function buildCards(){
