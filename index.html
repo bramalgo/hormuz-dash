@@ -419,7 +419,7 @@ select.fi option{background:var(--bg3);}
       </div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px;">
         <div class="fg"><div class="fl">Bot token</div><input class="fi" id="tg-token" type="password" placeholder="123456:ABCdef..." oninput="saveAlertSettings()"></div>
-        <div class="fg"><div class="fl">Chat ID</div><input class="fi" id="tg-chatid" type="text" placeholder="e.g. 123456789" oninput="saveAlertSettings()"></div>
+        <div class="fg"><div class="fl">Chat ID</div><input class="fi" id="tg-chatid" type="password" placeholder="e.g. 123456789" oninput="saveAlertSettings()"></div>
       </div>
       <div style="margin-bottom:12px;">
         <div class="sec-label" style="margin-bottom:6px;">Alert triggers</div>
@@ -1200,11 +1200,14 @@ function loadAlertSettings(){
     // Restore UI
     var chk=$('alerts-chk');if(chk)chk.checked=ALERTS.enabled;
     updateAlertsUI();
-    if(ALERTS.token){var t=$('tg-token');if(t)t.value=ALERTS.token;}
-    if(ALERTS.chatId){var c=$('tg-chatid');if(c)c.value=ALERTS.chatId;}
-    ['phase','brent120','ceasefire','pi','hormuz40','daily'].forEach(function(k){
-      var el=$('al-'+k);if(el)el.checked=ALERTS.triggers[k]||false;
-    });
+    // Populate fields — use setTimeout to ensure DOM is rendered after updateAlertsUI shows body
+    setTimeout(function(){
+      if(ALERTS.token){var t=$('tg-token');if(t)t.value=ALERTS.token;}
+      if(ALERTS.chatId){var c=$('tg-chatid');if(c)c.value=ALERTS.chatId;}
+      ['phase','brent120','ceasefire','pi','hormuz40','daily'].forEach(function(k){
+        var el=$('al-'+k);if(el)el.checked=ALERTS.triggers[k]||false;
+      });
+    },50);
   }catch(e){}
 }
 
