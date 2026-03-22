@@ -1106,10 +1106,15 @@ async function fetchHormuz(){
   var html=await safeProxy('https://www.hormuztracker.com/');
   if(!html)return false;
   try{
-    var vm=html.match(/~\s*(\d+)\s*\n[\s\S]{0,10}Vessels detected today/i)||html.match(/~\s*(\d+)\s*Vessels detected today/i)||html.match(/~\s*([\d]+)ships?\s*detected\s*today/i);
-    if(vm){var c=parseInt(vm[1],10);if(c<500)D.hormuz=c;}
-    var tm=html.match(/EU Gas \(TTF\)\s*\n+\s*€\s*([\d.]+)/i)||html.match(/EU Gas \(TTF\)€([\d.]+)/i);
-    if(tm){var tv=parseFloat(tm[1]);if(tv>5&&tv<500)D.ttf=tv;}
+    // Vessels — broad patterns
+    var vm=html.match(/(\d+)\s*vessels?\s*(?:detected\s*)?today/i)
+      ||html.match(/~\s*(\d+)\s*(?:ships?|vessels?)/i)
+      ||html.match(/(\d+)\s*ships?\s*(?:detected|transiting|passed)/i)
+      ||html.match(/vessel[^<]{0,30}?(\d+)/i);
+    if(vm){var c=parseInt(vm[1],10);if(c>0&&c<500)D.hormuz=c;}
+    // TTF — only use scraped if Yahoo TTF failed
+    var tm=html.match(/TTF[^\d]{0,20}([\d.]+)/i)||html.match(/€\s*([\d.]+)\s*\/\s*MWh/i);
+    if(tm){var tv=parseFloat(tm[1]);if(tv>5&&tv<500&&!D._ttfFromYahoo)D.ttf=tv;}
     D.piWithdrawn=/Withdrawn/i.test(html)&&/P.{0,3}I/i.test(html);
     D.cancelledClubs=(html.match(/Cancelled/gi)||[]).length;
     var wm=html.match(/[→]\s*([\d.]+)%\s*[–\-]\s*([\d.]+)/i);
@@ -1130,19 +1135,27 @@ async function fetchHormuz(){
 async function doRefresh(){
   var rb=$('rbtn');if(rb)rb.textContent='↻ Loading…';
   try{
-    var [bD,wD,gD,sD,tD,btcD,dxyD,kD,nD,bdiD]=await Promise.all([
+    var [bD,wD,gD,sD,tD,btcD,dxyD,kD,nD,bdiD,ttfD]=await Promise.all([
       fetchYahoo('BZ=F','60d'),fetchYahoo('CL=F','60d'),fetchYahoo('GC=F','5d'),
       fetchYahoo('%5EGSPC','5d'),fetchYahoo('%5ETNX','5d'),fetchYahoo('BTC-USD','5d'),
       fetchYahoo('DX-Y.NYB','5d'),fetchYahoo('%5EKS11','5d'),fetchYahoo('%5EN225','5d'),
-      fetchYahoo('%5EBDI','5d')
+      fetchYahoo('%5EBDI','5d'),fetchYahoo('TTF=F','5d')
     ]);
     function last(a){return a&&a.length?a[a.length-1].v:null;}
-    if(bD&&bD.length){D.brent=last(bD);D.brentH=bD.slice(-30);D.srcYahoo='ok';}
-    if(wD&&wD.length){D.wti=last(wD);D.wtiH=wD.slice(-30);}
-    if(gD)D.gold=last(gD);if(sD)D.spx=last(sD);if(tD)D.tsy=last(tD);
-    if(btcD)D.btc=last(btcD);if(dxyD)D.dxy=last(dxyD);
-    if(kD)D.kospi=last(kD);if(nD)D.nikkei=last(nD);
-    if(bdiD)D.bdi=last(bdiD);
+    var fetched=[];
+    if(bD&&bD.length){D.brent=last(bD);D.brentH=bD.slice(-30);D.srcYahoo='ok';fetched.push('Brent');}
+    if(wD&&wD.length){D.wti=last(wD);D.wtiH=wD.slice(-30);fetched.push('WTI');}
+    if(gD){D.gold=last(gD);fetched.push('Gold');}
+    if(sD){D.spx=last(sD);fetched.push('SPX');}
+    if(tD){D.tsy=last(tD);fetched.push('TSY');}
+    if(btcD){D.btc=last(btcD);fetched.push('BTC:$'+Math.round(last(btcD)).toLocaleString());}
+    if(dxyD){D.dxy=last(dxyD);fetched.push('DXY');}
+    if(kD){D.kospi=last(kD);fetched.push('KOSPI');}
+    if(nD){D.nikkei=last(nD);fetched.push('N225');}
+    if(bdiD){D.bdi=last(bdiD);fetched.push('BDI');}
+    if(ttfD){D.ttf=last(ttfD);D._ttfFromYahoo=true;fetched.push('TTF');}
+    console.log('Yahoo fetched:',fetched.join(', '));
+    console.log('Failed:',[!bD&&'Brent',!wD&&'WTI',!gD&&'Gold',!sD&&'SPX',!tD&&'TSY',!btcD&&'BTC',!ttfD&&'TTF'].filter(Boolean).join(', '));
     await fetchHormuz();
     setText('lupd','Updated '+new Date().toLocaleTimeString());
     save();render();checkAlertTriggers();
