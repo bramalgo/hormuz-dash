@@ -134,9 +134,98 @@ select.fi option{background:var(--bg3);}
 .n-text{font-size:11px;color:var(--muted2);margin-top:1px;line-height:1.4;}
 .override-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:8px;}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:0.4}}
-@media(max-width:960px){.layout{grid-template-columns:1fr;}.sidebar{position:static;height:auto;}.kgrid{grid-template-columns:1fr 1fr;}.two-col,.pb-grid{grid-template-columns:1fr;}.topbar{padding:0 14px;}.ticker{padding:0 14px;}.main{padding:14px;}.decision{padding:12px 14px;}}
-@media(max-width:600px){.kgrid{grid-template-columns:1fr 1fr;}.topbar-right .btn:not(.btn-primary):not(#rbtn){display:none;}.logo{font-size:9px;}}
-@supports(padding:env(safe-area-inset-left)){.topbar,.ticker{padding-left:calc(24px + env(safe-area-inset-left));padding-right:calc(24px + env(safe-area-inset-right));}.main{padding-bottom:calc(16px + env(safe-area-inset-bottom));}}
+/* ── TABLET ── */
+@media(max-width:960px){
+  .layout{grid-template-columns:1fr;}
+  .sidebar{position:static;height:auto;max-height:none;border-right:none;border-bottom:1px solid var(--border);flex-direction:row;flex-wrap:wrap;gap:12px;padding:14px;}
+  .sidebar>div{min-width:200px;flex:1;}
+  .kgrid{grid-template-columns:repeat(3,minmax(0,1fr));}
+  .two-col,.pb-grid{grid-template-columns:1fr 1fr;}
+  .topbar{padding:0 16px;}
+  .ticker{padding:0 16px;}
+  .main{padding:14px;}
+  .decision{padding:12px 14px;}
+}
+/* ── MOBILE ── */
+@media(max-width:640px){
+  #mobile-summary{display:flex!important;}
+  :root{--th:46px;--tkh:32px;}
+  .layout{grid-template-columns:1fr;}
+  .sidebar{display:none;}  /* hidden on mobile — key info in decision+cards */
+  .main{padding:10px 12px;gap:12px;}
+  .main>*:first-child .sec-label[style*="visibility:hidden"]{display:none;}/* hide spacer */
+  .decision{padding:12px 14px;border-radius:8px;}
+  .decision div[style*="font-size:17px"]{font-size:14px!important;}
+  .decision div[style*="font-size:9px"]{font-size:8px!important;}
+  .decision div[style*="font-size:11px"]{font-size:10px!important;}
+  .kgrid{grid-template-columns:1fr 1fr;gap:8px;}
+  .kcard{padding:9px 10px;}
+  .kcard-val{font-size:16px!important;}
+  .kcard-lbl{font-size:8px!important;}
+  .kcard-chg{font-size:9px!important;}
+  .kcard-sub{font-size:9px!important;}
+  .kbadge{font-size:7px!important;padding:1px 3px!important;}
+  .two-col{grid-template-columns:1fr;}
+  .pb-grid{grid-template-columns:1fr;}
+  .topbar{padding:0 12px;height:var(--th);}
+  .topbar-right .btn:not(.btn-primary):not(#rbtn){display:none;}
+  .logo{font-size:9px;}
+  .ticker{padding:0 12px;height:var(--tkh);}
+  .ticker-label{font-size:8px;padding-right:8px;margin-right:8px;}
+  .ticker-item{font-size:9px;gap:4px;}
+  .t-dot{width:4px;height:4px;}
+  .chart-wrap{padding:10px 12px;}
+  .chart-wrap div[style*="height:220px"]{height:180px!important;}
+  .sec-tabs{gap:3px;}
+  .sec-tab{font-size:8px;padding:3px 7px;}
+  .signal-card{padding:6px 9px;margin-bottom:4px;}
+  .signal-val{font-size:11px;}
+  .ind-table th,.ind-table td{padding:6px 6px;font-size:10px;}
+  /* Hide less critical columns on mobile signal table */
+  .ind-table th:nth-child(3),.ind-table td:nth-child(3),
+  .ind-table th:nth-child(5),.ind-table td:nth-child(5){display:none;}
+  .pb-card{padding:12px;}
+  .pb-card li{font-size:10px;}
+  .override-grid{grid-template-columns:1fr 1fr;}
+  .alloc-lbl{width:80px;}
+  /* Phase card compact */
+  .phase-card{padding:10px 12px;}
+  /* Conflict badge text */
+  #day-counter{font-size:14px!important;}
+  .src-chip{font-size:7px;padding:1px 5px;}
+}
+/* ── SMALL MOBILE ── */
+@media(max-width:380px){
+  .kgrid{grid-template-columns:1fr 1fr;}
+  .topbar-right .btn{display:none;}
+  .topbar-right .btn-primary{display:inline-flex;}
+}
+@supports(padding:env(safe-area-inset-left)){
+  .topbar,.ticker{padding-left:max(12px,env(safe-area-inset-left));padding-right:max(12px,env(safe-area-inset-right));}
+  .main{padding-bottom:calc(10px + env(safe-area-inset-bottom));}
+}
+/* ── MOBILE TOPBAR CLEANUP ── */
+@media(max-width:640px){
+  #src-yahoo, #src-hormuz{display:none;}  /* hide in topbar, still in ticker */
+  .topbar>div:first-child{gap:8px;}
+  .topbar>div:first-child>div:nth-child(2){padding:3px 8px;}  /* conflict badge smaller */
+  /* Ticker: horizontal scroll on mobile */
+  .ticker{overflow-x:auto;overflow-y:hidden;-webkit-overflow-scrolling:touch;}
+  .ticker::-webkit-scrollbar{display:none;}
+  .ticker-items{flex-wrap:nowrap;overflow:visible;min-width:max-content;}
+  /* Invisible spacer div — remove margin on mobile */
+  .main>div:first-child>.sec-label{display:none;}
+  .main>div:first-child{gap:0;}
+  /* Panel padding */
+  .panel,.chart-wrap{padding:12px 14px!important;}
+  /* Signal table — mobile readable */  
+  .ind-table{font-size:10px;}
+  /* Two-col chart becomes single on mobile */
+  .two-col .chart-wrap{min-height:0;}
+  /* Alloc chart hide on mobile (too small to be useful) */
+  .two-col>div:last-child{display:none;}
+  .two-col{grid-template-columns:1fr!important;}
+}
 </style>
 </head>
 <body>
@@ -168,6 +257,18 @@ select.fi option{background:var(--bg3);}
   <div class="ticker-label">INDICATORS ▸</div>
   <div class="ticker-items" id="ticker-items">
     <!-- populated by renderTicker() -->
+  </div>
+</div>
+
+<!-- Mobile-only phase summary strip (sidebar is hidden on mobile) -->
+<div id="mobile-summary" style="display:none;padding:10px 12px;background:var(--bg2);border-bottom:1px solid var(--border);gap:10px;flex-wrap:wrap;align-items:stretch;position:sticky;top:calc(var(--th) + var(--tkh));z-index:97;">
+  <div class="phase-card p0" id="phase-card-mob" style="flex:1;min-width:140px;padding:10px 12px;">
+    <div class="phase-lbl" id="phase-lbl-mob" style="color:var(--accent);">PHASE 0</div>
+    <div class="phase-name" id="phase-name-mob">Cash preservation</div>
+  </div>
+  <div style="flex:1;min-width:140px;background:var(--bg3);border-radius:8px;border:1px solid var(--border);padding:10px 12px;">
+    <div style="font-family:var(--mono);font-size:9px;color:var(--muted);letter-spacing:0.1em;margin-bottom:5px;">TOP ALLOCATIONS</div>
+    <div id="alloc-mob" style="font-family:var(--mono);font-size:10px;color:var(--muted2);line-height:1.7;"></div>
   </div>
 </div>
 
@@ -445,11 +546,19 @@ function renderTicker(){
 function renderPhase(){
   var ph=calcPhase(),p=PHASES[ph];
   var pc=$('phase-card');if(pc)pc.className='phase-card '+p.cls;
-  setText('phase-lbl',p.lbl);$('phase-lbl').style.color=p.col;
+  if($('phase-lbl')){setText('phase-lbl',p.lbl);$('phase-lbl').style.color=p.col;}
   setText('phase-name',p.name);setText('phase-desc',p.desc);
   var dc=$('decision');if(dc)dc.className='decision '+p.dcls;
   var dl=$('drec-lbl');if(dl){dl.textContent='CURRENT RECOMMENDATION · '+p.lbl;dl.style.color=p.col;}
   setText('drec-title',p.rec);setText('drec-sub',p.sub);
+  // Mobile summary strip
+  var pcm=$('phase-card-mob');if(pcm)pcm.className='phase-card '+p.cls;
+  if($('phase-lbl-mob')){setText('phase-lbl-mob',p.lbl);$('phase-lbl-mob').style.color=p.col;}
+  setText('phase-name-mob',p.name);
+  var a=PHASES[ph].alloc;
+  var tops=KEYS.filter(function(k){return a[k]>0;}).sort(function(x,y){return a[y]-a[x];}).slice(0,4);
+  var am=$('alloc-mob');
+  if(am)am.innerHTML=tops.map(function(k){return'<span style="color:'+COLORS[k]+';">■</span> '+LBLS[k]+' <strong style="color:var(--text);">'+a[k]+'%</strong>';}).join(' &nbsp; ');
   return ph;
 }
 
