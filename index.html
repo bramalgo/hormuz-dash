@@ -1,0 +1,969 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0,viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>Hormuz Crisis — Investor Decision Dashboard</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#0a0c0f;--bg2:#111318;--bg3:#181c22;--border:rgba(255,255,255,0.07);--border2:rgba(255,255,255,0.12);--border3:rgba(255,255,255,0.18);--text:#e8eaf0;--muted:#6b7280;--muted2:#9ca3af;--accent:#3b82f6;--green:#10b981;--green-bg:rgba(16,185,129,0.08);--green-b:rgba(16,185,129,0.25);--amber:#f59e0b;--amber-bg:rgba(245,158,11,0.08);--amber-b:rgba(245,158,11,0.25);--red:#ef4444;--red-bg:rgba(239,68,68,0.08);--red-b:rgba(239,68,68,0.25);--blue-bg:rgba(59,130,246,0.08);--blue-b:rgba(59,130,246,0.25);--purple:#8b5cf6;--cyan:#06b6d4;--orange:#f97316;--mono:'IBM Plex Mono',monospace;--sans:'IBM Plex Sans',sans-serif;--th:50px;--tkh:34px;}
+*{box-sizing:border-box;margin:0;padding:0;}
+html,body{height:100%;-webkit-text-size-adjust:100%;overflow-x:hidden;}
+body{background:var(--bg);color:var(--text);font-family:var(--sans);font-size:13px;line-height:1.5;min-height:100%;}
+.topbar{display:flex;align-items:center;justify-content:space-between;padding:0 24px;height:var(--th);border-bottom:1px solid var(--border);background:var(--bg);position:sticky;top:0;z-index:100;-webkit-backdrop-filter:blur(0);backdrop-filter:none;}
+.logo{font-family:var(--mono);font-size:11px;font-weight:500;letter-spacing:0.1em;color:var(--muted2);text-transform:uppercase;}
+.logo span{color:var(--accent);}
+.topbar-right{display:flex;align-items:center;gap:10px;}
+.btn{font-family:var(--mono);font-size:10px;padding:5px 11px;border:1px solid var(--border2);border-radius:4px;background:transparent;color:var(--muted2);cursor:pointer;transition:all .15s;-webkit-tap-highlight-color:transparent;touch-action:manipulation;}
+.btn:hover{background:var(--bg3);color:var(--text);border-color:var(--accent);}
+.btn-primary{background:var(--accent);color:#fff;border-color:var(--accent);}
+.ticker{background:var(--bg2);border-bottom:1px solid var(--border);padding:0 24px;display:flex;align-items:center;height:var(--tkh);position:sticky;top:var(--th);z-index:99;overflow:hidden;width:100%;will-change:transform;}
+.ticker-label{font-family:var(--mono);font-size:9px;color:var(--accent);letter-spacing:0.12em;flex-shrink:0;padding:0 12px 0 0;border-right:1px solid var(--border);margin-right:14px;white-space:nowrap;}
+.ticker-items{display:flex;gap:18px;flex:1;overflow:hidden;align-items:center;}
+.ticker-item{font-family:var(--mono);font-size:10px;color:var(--muted2);white-space:nowrap;display:flex;align-items:center;gap:5px;flex-shrink:0;}
+.t-dot{width:5px;height:5px;border-radius:50%;flex-shrink:0;}
+.src-chip{font-family:var(--mono);font-size:8px;padding:2px 7px;border-radius:3px;display:flex;align-items:center;gap:4px;text-decoration:none;white-space:nowrap;}
+.src-ok{background:var(--green-bg);color:var(--green);border:1px solid var(--green-b);}
+.src-seed{background:var(--amber-bg);color:var(--amber);border:1px solid var(--amber-b);}
+.src-dot{width:5px;height:5px;border-radius:50%;flex-shrink:0;}
+.layout{display:grid;grid-template-columns:290px 1fr;min-height:calc(100vh - var(--th) - var(--tkh));}
+.sidebar{border-right:1px solid var(--border);padding:18px 14px;display:flex;flex-direction:column;gap:18px;position:sticky;top:calc(var(--th) + var(--tkh));height:calc(100vh - var(--th) - var(--tkh));overflow-y:auto;-webkit-overflow-scrolling:touch;}
+.main{padding:18px 22px 18px 14px;display:flex;flex-direction:column;gap:16px;-webkit-overflow-scrolling:touch;}
+.sec-label{font-family:var(--mono);font-size:9px;letter-spacing:0.15em;color:var(--muted);text-transform:uppercase;margin-bottom:7px;}
+.phase-card{border-radius:8px;padding:14px;border:1px solid;}
+.p0{background:var(--blue-bg);border-color:var(--blue-b);}
+.p1{background:var(--amber-bg);border-color:var(--amber-b);}
+.p2{background:var(--green-bg);border-color:var(--green-b);}
+.pb{background:var(--red-bg);border-color:var(--red-b);}
+.phase-lbl{font-family:var(--mono);font-size:9px;letter-spacing:0.12em;margin-bottom:5px;}
+.phase-name{font-size:13px;font-weight:500;margin-bottom:3px;}
+.phase-desc{font-size:10px;color:var(--muted2);line-height:1.5;}
+.alloc-row{display:flex;align-items:center;gap:7px;margin-bottom:5px;}
+.alloc-lbl{font-size:10px;color:var(--muted2);width:108px;flex-shrink:0;}
+.bar-wrap{flex:1;height:4px;background:var(--bg3);border-radius:2px;overflow:hidden;}
+.bar{height:100%;border-radius:2px;}
+.alloc-pct{font-family:var(--mono);font-size:10px;color:var(--text);width:34px;text-align:right;}
+.signal-card{background:var(--bg3);border-radius:6px;padding:8px 11px;border:1px solid var(--border);margin-bottom:5px;}
+.signal-lbl{font-family:var(--mono);font-size:9px;color:var(--muted);margin-bottom:2px;}
+.signal-val{font-family:var(--mono);font-size:12px;font-weight:500;}
+.kgrid{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:10px;}
+.kcard{background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:12px 14px;position:relative;}
+.kcard-lbl{font-family:var(--mono);font-size:9px;letter-spacing:0.08em;color:var(--muted);text-transform:uppercase;margin-bottom:5px;}
+.kcard-val{font-family:var(--mono);font-size:20px;font-weight:500;line-height:1;margin-bottom:3px;}
+.kcard-chg{font-family:var(--mono);font-size:10px;}
+.kcard-sub{font-size:10px;color:var(--muted);margin-top:2px;}
+.up{color:var(--red);}
+.down{color:var(--green);}
+.kbadge{position:absolute;top:8px;right:10px;font-family:var(--mono);font-size:8px;padding:1px 5px;border-radius:2px;background:var(--amber-bg);color:var(--amber);border:1px solid var(--amber-b);}
+.kbadge:hover{opacity:0.75;text-decoration:underline!important;}
+.kbadge.live{background:var(--green-bg);color:var(--green);border-color:var(--green-b);}
+.decision{border-radius:8px;padding:14px 18px;border:1px solid;}
+.d0{background:linear-gradient(135deg,rgba(59,130,246,0.06),var(--bg2));border-color:rgba(59,130,246,0.3);}
+.d1{background:linear-gradient(135deg,rgba(245,158,11,0.06),var(--bg2));border-color:rgba(245,158,11,0.3);}
+.d2{background:linear-gradient(135deg,rgba(16,185,129,0.06),var(--bg2));border-color:rgba(16,185,129,0.3);}
+.db{background:linear-gradient(135deg,rgba(239,68,68,0.06),var(--bg2));border-color:rgba(239,68,68,0.3);}
+.panel{background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:14px 16px;}
+.two-col{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+.chart-wrap{background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:14px;}
+.chart-title{font-size:12px;font-weight:500;margin-bottom:3px;}
+.chart-sub{font-size:10px;color:var(--muted);margin-bottom:10px;}
+.ind-table{width:100%;border-collapse:collapse;}
+.ind-table th{font-family:var(--mono);font-size:9px;letter-spacing:0.08em;color:var(--muted);text-transform:uppercase;padding:5px 10px;border-bottom:1px solid var(--border);text-align:left;font-weight:400;}
+.ind-table td{padding:9px 10px;border-bottom:1px solid var(--border);font-size:11px;vertical-align:middle;}
+.ind-table tr:last-child td{border-bottom:none;}
+.ind-table tr:hover td{background:var(--bg3);}
+.pill{display:inline-flex;align-items:center;font-family:var(--mono);font-size:9px;padding:2px 7px;border-radius:3px;}
+.pill-red{background:var(--red-bg);color:var(--red);}
+.pill-amber{background:var(--amber-bg);color:var(--amber);}
+.pill-green{background:var(--green-bg);color:var(--green);}
+.pill-gray{background:rgba(255,255,255,0.05);color:var(--muted);}
+.pill-auto{background:var(--green-bg);color:var(--green);font-size:8px;}
+.pill-seed{background:var(--amber-bg);color:var(--amber);font-size:8px;}
+.pill-scrape{background:var(--blue-bg);color:var(--accent);font-size:8px;}
+.sec-tabs{display:flex;gap:4px;margin-bottom:12px;flex-wrap:wrap;}
+.sec-tab{font-family:var(--mono);font-size:9px;padding:4px 10px;border:1px solid var(--border2);border-radius:4px;background:transparent;color:var(--muted);cursor:pointer;}
+.sec-tab.active{background:var(--bg3);color:var(--text);border-color:var(--border3);}
+.sec-bucket{display:none;}
+.sec-bucket.active{display:block;}
+.sec-table{width:100%;border-collapse:collapse;}
+.sec-table th{font-family:var(--mono);font-size:9px;letter-spacing:0.08em;color:var(--muted);text-transform:uppercase;padding:4px 10px;border-bottom:1px solid var(--border);text-align:left;font-weight:400;}
+.sec-table td{padding:8px 10px;border-bottom:1px solid var(--border);font-size:11px;vertical-align:top;}
+.sec-table tr:last-child td{border-bottom:none;}
+.sec-table tr:hover td{background:var(--bg3);}
+.sticker{font-family:var(--mono);font-size:11px;font-weight:500;}
+.srat-buy{color:var(--green);font-family:var(--mono);font-size:10px;}
+.srat-hold{color:var(--amber);font-family:var(--mono);font-size:10px;}
+.sbadge{display:inline-block;font-family:var(--mono);font-size:8px;padding:1px 5px;border-radius:3px;}
+.sb-etf{background:rgba(59,130,246,0.15);color:var(--accent);}
+.sb-stock{background:rgba(16,185,129,0.12);color:var(--green);}
+.sb-bond{background:rgba(139,92,246,0.15);color:var(--purple);}
+.sb-commod{background:rgba(249,115,22,0.15);color:var(--orange);}
+.pb-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.pb-card{border-radius:8px;padding:14px;border:1px solid;}
+.pb-trig{font-family:var(--mono);font-size:9px;padding:2px 7px;border-radius:3px;display:inline-block;margin-bottom:6px;}
+.pb-card h4{font-size:12px;font-weight:500;margin-bottom:6px;}
+.pb-card li{font-size:10px;color:var(--muted2);line-height:1.4;padding-left:12px;position:relative;margin-bottom:3px;}
+.pb-card li::before{content:'›';position:absolute;left:0;color:var(--muted);}
+.nav-body{overflow:hidden;max-height:0;transition:max-height .35s ease,opacity .25s ease;opacity:0;}
+.nav-body.open{max-height:600px;opacity:1;}
+.toggle{position:relative;width:34px;height:18px;cursor:pointer;flex-shrink:0;}
+.toggle input{opacity:0;width:0;height:0;}
+.t-slider{position:absolute;inset:0;background:var(--bg3);border-radius:9px;border:1px solid var(--border2);transition:.2s;}
+.t-slider:before{content:'';position:absolute;width:12px;height:12px;left:2px;top:2px;background:var(--muted);border-radius:50%;transition:.2s;}
+.toggle input:checked+.t-slider{background:var(--accent);border-color:var(--accent);}
+.toggle input:checked+.t-slider:before{transform:translateX(16px);background:#fff;}
+.fg{display:flex;flex-direction:column;gap:3px;}
+.fl{font-family:var(--mono);font-size:9px;letter-spacing:0.1em;color:var(--muted);text-transform:uppercase;}
+.fi{background:var(--bg3);border:1px solid var(--border2);border-radius:4px;color:var(--text);font-family:var(--mono);font-size:11px;padding:5px 9px;outline:none;width:100%;}
+.fi:focus{border-color:var(--accent);}
+select.fi option{background:var(--bg3);}
+.rbal-table{width:100%;border-collapse:collapse;}
+.rbal-table th{font-family:var(--mono);font-size:9px;letter-spacing:0.08em;color:var(--muted);text-transform:uppercase;padding:5px 10px;border-bottom:1px solid var(--border);text-align:right;font-weight:400;}
+.rbal-table th:first-child{text-align:left;}
+.rbal-table td{padding:8px 10px;border-bottom:1px solid var(--border);font-size:11px;text-align:right;font-family:var(--mono);}
+.rbal-table td:first-child{text-align:left;font-family:var(--sans);}
+.rbal-table tr:last-child td{border-bottom:none;}
+.buy-a{color:var(--green);}
+.sell-a{color:var(--red);}
+.no-a{color:var(--muted);}
+.news-item{padding:9px 0;border-bottom:1px solid var(--border);display:flex;gap:9px;}
+.news-item:last-child{border-bottom:none;}
+.n-dot{width:5px;height:5px;border-radius:50%;flex-shrink:0;margin-top:5px;}
+.n-time{font-family:var(--mono);font-size:9px;color:var(--muted);}
+.n-text{font-size:11px;color:var(--muted2);margin-top:1px;line-height:1.4;}
+.override-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:8px;}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.4}}
+@media(max-width:960px){.layout{grid-template-columns:1fr;}.sidebar{position:static;height:auto;}.kgrid{grid-template-columns:1fr 1fr;}.two-col,.pb-grid{grid-template-columns:1fr;}.topbar{padding:0 14px;}.ticker{padding:0 14px;}.main{padding:14px;}.decision{padding:12px 14px;}}
+@media(max-width:600px){.kgrid{grid-template-columns:1fr 1fr;}.topbar-right .btn:not(.btn-primary):not(#rbtn){display:none;}.logo{font-size:9px;}}
+@supports(padding:env(safe-area-inset-left)){.topbar,.ticker{padding-left:calc(24px + env(safe-area-inset-left));padding-right:calc(24px + env(safe-area-inset-right));}.main{padding-bottom:calc(16px + env(safe-area-inset-bottom));}}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div style="display:flex;align-items:center;gap:12px;">
+    <div class="logo"><span>HORMUZ</span> / DECISION DASHBOARD</div>
+    <div style="background:var(--red-bg);border:1px solid var(--red-b);border-radius:6px;padding:4px 12px;display:flex;align-items:center;gap:8px;">
+      <div style="width:7px;height:7px;border-radius:50%;background:var(--red);animation:pulse 1.5s infinite;flex-shrink:0;"></div>
+      <div style="font-family:var(--mono);font-size:10px;color:var(--red);letter-spacing:0.1em;">CONFLICT ACTIVE</div>
+      <div style="font-family:var(--mono);font-size:16px;font-weight:500;color:var(--red);letter-spacing:0.05em;" id="day-counter">DAY 22</div>
+    </div>
+    <a href="https://finance.yahoo.com/" target="_blank" class="src-chip src-seed" id="src-yahoo" style="text-decoration:none;">
+      <div class="src-dot" style="background:var(--amber);"></div>Yahoo 22 MAR
+    </a>
+    <a href="https://www.hormuztracker.com/" target="_blank" class="src-chip src-seed" id="src-hormuz" style="text-decoration:none;">
+      <div class="src-dot" style="background:var(--amber);"></div>HormuzTracker 22 MAR
+    </a>
+  </div>
+  <div class="topbar-right">
+    <div style="font-family:var(--mono);font-size:10px;color:var(--muted);" id="lupd">—</div>
+    <button class="btn" id="rbtn" onclick="doRefresh()">↻ Refresh</button>
+    <button class="btn" onclick="document.getElementById('nav-section').scrollIntoView({behavior:'smooth'})">NAV</button>
+    <button class="btn btn-primary" onclick="doExport()">Export</button>
+  </div>
+</div>
+
+<div class="ticker">
+  <div class="ticker-label">INDICATORS ▸</div>
+  <div class="ticker-items" id="ticker-items">
+    <!-- populated by renderTicker() -->
+  </div>
+</div>
+
+<div class="layout">
+<div class="sidebar">
+  <div>
+    <div class="sec-label">Current phase</div>
+    <div class="phase-card p0" id="phase-card">
+      <div class="phase-lbl" id="phase-lbl" style="color:var(--accent);">PHASE 0</div>
+      <div class="phase-name" id="phase-name">Cash preservation</div>
+      <div class="phase-desc" id="phase-desc">No trigger conditions met.</div>
+    </div>
+  </div>
+  <div>
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:7px;">
+      <div class="sec-label" style="margin:0;">Target allocation</div>
+      <span style="font-size:9px;color:var(--muted);cursor:pointer;font-family:var(--mono);" id="navtog" onclick="toggleNavVal()">show £</span>
+    </div>
+    <div id="alloc-bars"></div>
+  </div>
+  <div>
+    <div class="sec-label">Key thresholds</div>
+    <div class="signal-card"><div class="signal-lbl">Hormuz vessels/day</div><div class="signal-val" style="color:var(--amber);">40+ → Phase 1</div></div>
+    <div class="signal-card"><div class="signal-lbl">P&I reinstatement</div><div class="signal-val" style="color:var(--green);">Any club → Phase 1</div></div>
+    <div class="signal-card"><div class="signal-lbl">Brent + ceasefire</div><div class="signal-val" style="color:var(--green);">&lt;$80 + open → Phase 2</div></div>
+    <div class="signal-card"><div class="signal-lbl">Severe scenario</div><div class="signal-val" style="color:var(--red);">$120+ × 3d → Bear</div></div>
+    <div class="signal-card"><div class="signal-lbl">Recession signal</div><div class="signal-val" style="color:var(--accent);">10yr &lt;4.0% → extend dur.</div></div>
+  </div>
+</div>
+
+<div class="main">
+
+  <div style="display:flex;flex-direction:column;">
+    <div class="sec-label" style="visibility:hidden;margin-bottom:7px;">placeholder</div>
+    <div class="decision d0" id="decision">
+      <div style="font-family:var(--mono);font-size:9px;letter-spacing:0.15em;margin-bottom:4px;" id="drec-lbl" style="color:var(--accent);">CURRENT RECOMMENDATION · PHASE 0</div>
+      <div style="font-size:17px;font-weight:500;margin-bottom:4px;" id="drec-title">Hold cash. No triggers fired.</div>
+      <div style="font-size:11px;color:var(--muted2);max-width:680px;line-height:1.5;" id="drec-sub">All indicators auto-monitored. Act within 24–48h of any ceasefire or Hormuz reopening signal.</div>
+    </div>
+  </div>
+
+  <div>
+    <div class="sec-label" style="margin-bottom:8px;">Key indicators</div>
+    <div class="kgrid" id="kgrid"></div>
+  </div>
+
+  <div class="two-col">
+    <div class="chart-wrap">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:3px;">
+        <div class="chart-title" id="pchart-title">Brent crude — since conflict start</div>
+        <div style="display:flex;gap:5px;">
+          <button class="btn" id="btn-brent" onclick="setChart('brent')" style="font-size:9px;padding:3px 8px;background:rgba(245,158,11,0.15);border-color:#f59e0b;color:#f59e0b;">Brent</button>
+          <button class="btn" id="btn-wti" onclick="setChart('wti')" style="font-size:9px;padding:3px 8px;">WTI</button>
+          <button class="btn" id="btn-ev" onclick="toggleEv()" style="font-size:9px;padding:3px 8px;background:rgba(59,130,246,0.15);border-color:#3b82f6;color:#3b82f6;">Events</button>
+        </div>
+      </div>
+      <div class="chart-sub" id="pchart-sub">22 Mar 2026 snapshot · Yahoo Finance when live</div>
+      <div style="position:relative;height:220px;"><canvas id="priceChart"></canvas></div>
+    </div>
+    <div class="chart-wrap">
+      <div class="chart-title">Target allocation</div>
+      <div class="chart-sub" id="alloc-sub">Auto-updates with phase trigger</div>
+      <div style="position:relative;height:220px;"><canvas id="allocChart"></canvas></div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="sec-label">Signal board</div>
+    <table class="ind-table"><thead><tr><th style="width:22%">Indicator</th><th style="width:20%">Value</th><th style="width:32%">Trigger</th><th style="width:13%">Signal</th><th style="width:13%">Source</th></tr></thead>
+    <tbody id="sig-tbody"></tbody></table>
+  </div>
+
+  <div class="panel" id="nav-section">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+      <div class="sec-label" style="margin:0;">Portfolio NAV &amp; rebalancing</div>
+      <div style="display:flex;align-items:center;gap:8px;">
+        <label class="toggle"><input type="checkbox" id="nav-chk" onchange="toggleNav()"><span class="t-slider"></span></label>
+        <span style="font-size:11px;color:var(--muted2);">Enable</span>
+      </div>
+    </div>
+    <div class="nav-body" id="nav-body">
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:9px;margin-bottom:12px;">
+        <div class="fg"><div class="fl">Total NAV</div><div style="display:flex;gap:6px;"><select class="fi" id="nccy" style="width:52px;" onchange="recalc()"><option>£</option><option>$</option><option>€</option></select><input class="fi" id="ntotal" type="number" placeholder="e.g. 1000000" oninput="recalc()" style="flex:1;"></div></div>
+        <div class="fg"><div class="fl">Compare phase</div><select class="fi" id="nphase" onchange="recalc()"><option value="auto">Current (auto)</option><option value="0">Phase 0</option><option value="1">Phase 1</option><option value="2">Phase 2</option><option value="bear">Bear</option></select></div>
+        <div class="fg"><div class="fl">Min trade</div><input class="fi" id="nmin" type="number" value="5000" oninput="recalc()"></div>
+      </div>
+      <div style="margin-bottom:10px;"><div class="sec-label" style="margin-bottom:7px;">Current holdings (optional)</div><div style="display:grid;grid-template-columns:repeat(5,1fr);gap:6px;" id="holdings-grid"></div></div>
+      <div id="rebal-out"></div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="sec-label" style="margin-bottom:10px;">Securities — by bucket</div>
+    <div class="sec-tabs" id="sec-tabs"></div>
+    <div id="sec-buckets"></div>
+  </div>
+
+  <div class="panel">
+    <div class="sec-label" style="margin-bottom:10px;">Phase playbook</div>
+    <div class="pb-grid" id="playbook"></div>
+  </div>
+
+  <div class="panel">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+      <div class="sec-label" style="margin:0;">Manual overrides <span style="font-size:9px;color:var(--muted);font-family:var(--mono);letter-spacing:0;margin-left:8px;">— update any value here; persists in browser</span></div>
+      <button class="btn" style="font-size:9px;padding:3px 8px;" onclick="clearOv()">Clear</button>
+    </div>
+    <div class="override-grid" id="ov-grid"></div>
+    <div style="margin-top:10px;display:flex;gap:8px;align-items:center;">
+      <button class="btn btn-primary" style="font-size:10px;" onclick="saveOv()">Save &amp; recalculate</button>
+      <span id="ov-msg" style="font-family:var(--mono);font-size:10px;color:var(--green);"></span>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="sec-label" style="margin-bottom:10px;">Event log</div>
+    <div id="news-feed"></div>
+  </div>
+
+</div>
+</div>
+
+<script>
+/* ── DATA ── all pre-seeded with real 22 Mar 2026 values */
+var D = {
+  brent:112.19, wti:98.32, gold:4574.90, tsy:4.39, spx:6506.48, btc:68900,
+  dxy:99.5, kospi:2280, nikkei:35800, bdi:890,
+  hormuz:5, ttf:60.20, piWithdrawn:true, cancelledClubs:6, warRiskRange:'0.5–2.0',
+  vlcc:285000, carriersOut:9, carriersTotal:9, conflictDay:22, ieaMb:400, ceasefire:'none',
+  brentH:[
+    {t:1772236800,v:71.32},{t:1772409600,v:77.24},{t:1772496000,v:82.1},{t:1772582400,v:85.4},
+    {t:1772668800,v:89.2},{t:1772755200,v:93.5},{t:1773014400,v:98.8},{t:1773100800,v:103.2},
+    {t:1773187200,v:108.5},{t:1773273600,v:119.5},{t:1773360000,v:115.3},{t:1773619200,v:110.8},
+    {t:1773705600,v:107.2},{t:1773792000,v:103.14},{t:1773878400,v:100.9},{t:1773964800,v:106.41},
+    {t:1774051200,v:107.4},{t:1774137600,v:112.19}
+  ],
+  wtiH:[
+    {t:1772236800,v:67.8},{t:1772409600,v:72.5},{t:1772496000,v:77.1},{t:1772582400,v:80.2},
+    {t:1772668800,v:84.1},{t:1772755200,v:88.0},{t:1773014400,v:92.5},{t:1773100800,v:96.8},
+    {t:1773187200,v:101.2},{t:1773273600,v:112.3},{t:1773360000,v:108.5},{t:1773619200,v:104.2},
+    {t:1773705600,v:100.8},{t:1773792000,v:96.5},{t:1773878400,v:94.3},{t:1773964800,v:96.8},
+    {t:1774051200,v:100.2},{t:1774137600,v:98.32}
+  ],
+  srcYahoo:'seeded', srcHormuz:'seeded',
+  navOpen:false, navShowVal:false, navTotal:null, navCcy:'£', navMin:5000,
+  holdings:{cash:0,tres:0,gold:0,def:0,nrg:0,asia:0,eu:0,em:0,us:0,btc:0},
+  overrides:{}
+};
+
+var BASES={brent:71.32,wti:67.80,gold:2650,tsy:4.19,spx:5840,ttf:30,btc:95000,dxy:107.5,kospi:2580,nikkei:39200,bdi:1850,vlcc:63000};
+var COLORS={cash:'#6b7280',tres:'#3b82f6',gold:'#f59e0b',def:'#8b5cf6',nrg:'#ef4444',asia:'#10b981',eu:'#06b6d4',em:'#84cc16',us:'#a78bfa',btc:'#f97316'};
+var KEYS=['cash','tres','gold','def','nrg','asia','eu','em','us','btc'];
+var LBLS={cash:'Cash',tres:'Treasuries',gold:'Gold',def:'Defence',nrg:'Energy',asia:'Asia ex-China',eu:'EU equities',em:'EM equities',us:'US equities',btc:'Bitcoin'};
+var BLBLS={cash:'Cash / equivalents',tres:'US Treasuries',gold:'Gold & miners',def:'Defence & aerospace',nrg:'Energy equities',asia:'Asia ex-China',eu:'EU equities',em:'Emerging markets',us:'US equities',btc:'Bitcoin'};
+
+var PHASES={
+  0:{lbl:'PHASE 0',name:'Cash preservation',desc:'No trigger conditions met. Maximum defensive posture.',col:'var(--accent)',cls:'p0',dcls:'d0',rec:'Hold cash. No triggers fired.',sub:'All indicators auto-monitored. Act within 24–48h of any ceasefire or Hormuz reopening.',alloc:{cash:60,tres:22,gold:12,def:6,nrg:0,asia:0,eu:0,em:0,us:0,btc:0}},
+  1:{lbl:'PHASE 1',name:'Partial re-risk',desc:'Hormuz partially reopening or diplomatic progress.',col:'var(--amber)',cls:'p1',dcls:'d1',rec:'Phase 1 triggered — begin adding energy & Asia.',sub:'Add XLE/BP/Shell (13%), EWJ/EWY (7%). Trim Treasuries to 12%. Watch for ceasefire.',alloc:{cash:45,tres:12,gold:10,def:5,nrg:13,asia:7,eu:5,em:3,us:0,btc:0}},
+  2:{lbl:'PHASE 2',name:'Major re-risk',desc:'Ceasefire confirmed or Brent below $80.',col:'var(--green)',cls:'p2',dcls:'d2',rec:'Phase 2 — major deployment window. Move fast.',sub:'Deploy remaining cash. Add EU (HEDJ), EM (INDA), US equities, Bitcoin. Speed matters.',alloc:{cash:12,tres:6,gold:5,def:5,nrg:18,asia:14,eu:11,em:8,us:14,btc:7}},
+  bear:{lbl:'BEAR CASE',name:'Full defensive',desc:'Severe scenario — Brent $120+ held 3+ days.',col:'var(--red)',cls:'pb',dcls:'db',rec:'Bear scenario. Do not deploy equities.',sub:'Add gold and Treasuries. Short GBP/EUR vs USD. Buy Brent calls as tail hedge.',alloc:{cash:50,tres:28,gold:20,def:2,nrg:0,asia:0,eu:0,em:0,us:0,btc:0}}
+};
+
+var GEO=[
+  {date:'2026-02-28',lbl:'Op. Epic Fury',c:'#ef4444'},
+  {date:'2026-03-02',lbl:'Hormuz closed',c:'#ef4444'},
+  {date:'2026-03-04',lbl:'KOSPI -12%',c:'#f59e0b'},
+  {date:'2026-03-08',lbl:'Brent $100+',c:'#f59e0b'},
+  {date:'2026-03-09',lbl:'GCC -10mb/d',c:'#ef4444'},
+  {date:'2026-03-11',lbl:'IEA 400mb',c:'#3b82f6'},
+  {date:'2026-03-13',lbl:'Peak $119',c:'#ef4444'},
+  {date:'2026-03-18',lbl:'Iran permits India/CN',c:'#f59e0b'},
+  {date:'2026-03-21',lbl:'21-nation stmt',c:'#10b981'}
+];
+
+var SECS={
+  cash:[{t:'T-Bills',n:'US 3-Month Treasury Bills',tp:'bond',r:'buy',w:'Risk-free ~5% yield while waiting. Roll monthly.'},{t:'SGLN',n:'iShares Physical Gold ETC (LSE)',tp:'etf',r:'buy',w:'GBP-listed physical gold. No FX cost.'},{t:'IBTS',n:'iShares $ Treasury 1-3yr UCITS',tp:'etf',r:'buy',w:'Short duration, earns Fed Funds carry.'},{t:'CSHI',n:'iShares $ Cash UCITS ETF',tp:'etf',r:'buy',w:'Ultra-short USD money market. Daily liquidity.'}],
+  tres:[{t:'TLT',n:'iShares 20+ Year Treasury ETF',tp:'etf',r:'buy',w:'Long duration. Rallies if Fed cuts into slowdown.'},{t:'IEF',n:'iShares 7-10 Year Treasury ETF',tp:'etf',r:'buy',w:'Medium duration. Less volatile than TLT.'},{t:'VGLT',n:'Vanguard Long-Term Treasury ETF',tp:'etf',r:'buy',w:'Cheaper than TLT (0.04% TER).'},{t:'IGLT',n:'iShares UK Gilts All Stocks',tp:'etf',r:'hold',w:'GBP-denominated. BoE on hold complicates the trade.'}],
+  gold:[{t:'GLD',n:'SPDR Gold Shares',tp:'etf',r:'buy',w:'Most liquid gold ETF globally.'},{t:'IAU',n:'iShares Gold Trust',tp:'etf',r:'buy',w:'Cheaper (0.25% TER). Same physical backing.'},{t:'SGLN',n:'iShares Physical Gold ETC (LSE)',tp:'etf',r:'buy',w:'GBP-listed. No USD FX cost. HMRC-friendly.'},{t:'NEM',n:'Newmont Corp',tp:'stock',r:'hold',w:'Largest gold miner. Leveraged to gold price.'},{t:'GDXJ',n:'VanEck Junior Gold Miners',tp:'etf',r:'hold',w:'2-3x beta. Speculative upside bet.'}],
+  def:[{t:'ITA',n:'iShares US Aerospace & Defense',tp:'etf',r:'buy',w:'RTX, LMT, NOC. NATO spending tailwind.'},{t:'XAR',n:'SPDR Aerospace & Defense ETF',tp:'etf',r:'buy',w:'Equal-weight. Better mid-cap exposure.'},{t:'DFNS',n:'WisdomTree Defence UCITS ETF',tp:'etf',r:'buy',w:'GBP-listed. BAE, Rheinmetall, Leonardo.'},{t:'LMT',n:'Lockheed Martin',tp:'stock',r:'buy',w:'F-35 backlog, THAAD, hypersonics.'},{t:'BA.',n:'BAE Systems',tp:'stock',r:'buy',w:'UK flagship. Submarine, cyber, land systems.'}],
+  nrg:[{t:'XLE',n:'Energy Select Sector SPDR',tp:'etf',r:'buy',w:'Diversified US energy. XOM, CVX. Downstream hedge.'},{t:'SHEL',n:'Shell plc',tp:'stock',r:'buy',w:"Europe's largest. LNG franchise. 4%+ yield."},{t:'TTE',n:'TotalEnergies SE',tp:'stock',r:'buy',w:'French integrated. High LNG exposure. 5%+ yield.'},{t:'BP',n:'BP plc',tp:'stock',r:'buy',w:'Cheap on P/B. GBP-listed. Integrated.'},{t:'XOM',n:'ExxonMobil',tp:'stock',r:'buy',w:'Guyana growth insulates from Hormuz.'},{t:'OXY',n:'Occidental Petroleum',tp:'stock',r:'hold',w:'High beta. Only add if $100+ Brent sustained.'}],
+  asia:[{t:'EWJ',n:'iShares MSCI Japan ETF',tp:'etf',r:'buy',w:'Japan overshot on oil fear. Corporate reform intact.'},{t:'EWY',n:'iShares MSCI South Korea ETF',tp:'etf',r:'buy',w:'KOSPI -12% circuit breaker. Samsung at deep value.'},{t:'EWA',n:'iShares MSCI Australia ETF',tp:'etf',r:'buy',w:'Commodity exporter. LNG prices help.'},{t:'7203.T',n:'Toyota Motor',tp:'stock',r:'buy',w:'Japan anchor. Hybrid powertrain hedge.'},{t:'005930.KS',n:'Samsung Electronics',tp:'stock',r:'buy',w:'Hardest hit. Memory cycle + AI chip catalyst.'}],
+  eu:[{t:'HEDJ',n:'WisdomTree Europe Hedged Equity',tp:'etf',r:'buy',w:'EU equities with EUR/USD hedge. Perfect for this trade.'},{t:'FEZ',n:'SPDR Euro Stoxx 50 ETF',tp:'etf',r:'buy',w:'Blue-chip Eurozone. Most liquid EU ETF.'},{t:'BAS.DE',n:'BASF SE',tp:'stock',r:'buy',w:'Energy cost-sensitive. Biggest gas-normalisation play.'},{t:'MT',n:'ArcelorMittal',tp:'stock',r:'buy',w:'Steel. Crushed by energy inflation. Massive upside.'}],
+  em:[{t:'INDA',n:'iShares MSCI India ETF',tp:'etf',r:'buy',w:'India oil-dependent but structurally strong.'},{t:'EWZ',n:'iShares MSCI Brazil ETF',tp:'etf',r:'buy',w:'Commodity exporter. Petrobras dominant.'},{t:'ASEA',n:'Global X ASEAN 40 ETF',tp:'etf',r:'buy',w:'SE Asia energy import relief play.'},{t:'PBR',n:'Petrobras (Brazil)',tp:'stock',r:'buy',w:'Offshore pre-salt. 12%+ yield.'}],
+  us:[{t:'SPY',n:'SPDR S&P 500 ETF',tp:'etf',r:'hold',w:'Broad US market. Phase 2+ only — add post-ceasefire.'},{t:'QQQ',n:'Invesco Nasdaq-100 ETF',tp:'etf',r:'hold',w:'Tech-heavy. AI spend structural and crisis-independent.'},{t:'XLF',n:'Financial Select Sector SPDR',tp:'etf',r:'buy',w:'Financials sold off on recession fear not fundamentals.'},{t:'BRK.B',n:'Berkshire Hathaway B',tp:'stock',r:'buy',w:'$340bn+ cash pile. Defensive quality in crisis.'}],
+  btc:[{t:'BTC',n:'Bitcoin (spot)',tp:'commod',r:'hold',w:'High-beta risk asset. Add Phase 2 only as premium unwinds.'},{t:'IBIT',n:'iShares Bitcoin Trust ETF (US)',tp:'etf',r:'hold',w:'Largest spot Bitcoin ETF. Most liquid.'},{t:'BTCE',n:'ETC Group Bitcoin ETP (LSE)',tp:'etf',r:'hold',w:'GBP/EUR-listed. Cleaner HMRC treatment for UK investors.'},{t:'MSTR',n:'MicroStrategy (Strategy)',tp:'stock',r:'hold',w:'~2x Bitcoin beta. High conviction only.'}]
+};
+
+/* ── PHASE LOGIC ── */
+function calcPhase(){
+  var b=D.brent||92,h=D.hormuz,cf=D.ceasefire,piOk=D.srcHormuz==='ok'&&!D.piWithdrawn;
+  if(b>=120&&(D.brentH.filter(function(p){return p.v>=120;}).length>=3))return 'bear';
+  if(cf==='holding'||cf==='announced')return 2;
+  if(b<80&&h&&h>=80)return 2;
+  if((h&&h>=40)||piOk)return 1;
+  if(cf==='talks')return 1;
+  return 0;
+}
+
+function fmtChg(v,base){
+  if(!v||!base)return{t:'—',cls:''};
+  var p=(v-base)/base*100;
+  return{t:(p>=0?'+':'')+p.toFixed(1)+'% vs pre-conflict',cls:p>0?'up':'down'};
+}
+function $(id){return document.getElementById(id);}
+function setText(id,v){var e=$(id);if(e)e.textContent=v;}
+
+/* ── RENDER TICKER ── */
+function renderTicker(){
+  var day=D.conflictDay||Math.floor((Date.now()-new Date('2026-02-28').getTime())/86400000);
+
+  // Update topbar day counter
+  var dc=$('day-counter');if(dc)dc.textContent='DAY '+day;
+
+  // Update topbar source chips
+  function updSrc(id,st){
+    var el=$(id);if(!el)return;
+    var isLive=st==='ok';
+    el.className='src-chip '+(isLive?'src-ok':'src-seed');
+    el.querySelector('.src-dot').style.background=isLive?'var(--green)':'var(--amber)';
+    el.querySelector('.src-dot').style.animation=isLive?'pulse 2s infinite':'';
+    el.childNodes[1].textContent='Yahoo '+(isLive?'LIVE':'22 MAR');
+  }
+  var sy=$('src-yahoo');
+  if(sy){var isLiveY=D.srcYahoo==='ok';sy.className='src-chip '+(isLiveY?'src-ok':'src-seed');
+    var sdY=sy.querySelector('.src-dot');if(sdY){sdY.style.background=isLiveY?'var(--green)':'var(--amber)';sdY.style.animation=isLiveY?'pulse 2s infinite':'';}
+    sy.lastChild.textContent='Yahoo '+(isLiveY?'LIVE':'22 MAR');}
+  var sh=$('src-hormuz');
+  if(sh){var isLiveH=D.srcHormuz==='ok';sh.className='src-chip '+(isLiveH?'src-ok':'src-seed');
+    var sdH=sh.querySelector('.src-dot');if(sdH){sdH.style.background=isLiveH?'var(--green)':'var(--amber)';sdH.style.animation=isLiveH?'pulse 2s infinite':'';}
+    sh.lastChild.textContent='HormuzTracker '+(isLiveH?'LIVE':'22 MAR');}
+
+  // Also update last-updated
+  if(D.srcYahoo==='ok'||D.srcHormuz==='ok'){var ld=$('lupd');if(ld)ld.textContent='Updated '+new Date().toLocaleTimeString();}
+
+  // Build grouped ticker items
+  function item(c,t){return'<div class="ticker-item"><div class="t-dot" style="background:'+c+'"></div>'+t+'</div>';}
+  function div(){return'<div style="width:1px;height:16px;background:var(--border);flex-shrink:0;margin:0 4px;"></div>';}
+
+  var html='';
+  // Group 1: Oil & Gas + IEA reserves
+  html+=item(D.brent>=120?'#ef4444':'#f59e0b','Brent $'+D.brent.toFixed(1));
+  html+=item('#f59e0b','WTI $'+D.wti.toFixed(1));
+  html+=item('#f59e0b','TTF €'+D.ttf.toFixed(1));
+  html+=item(D.ieaMb>=400?'#f59e0b':'#10b981','IEA '+D.ieaMb+'mb');
+  html+=div();
+  // Group 2: Macro / rates + BTC after DXY
+  html+=item('#e8eaf0','Gold $'+Math.round(D.gold).toLocaleString());
+  html+=item('#3b82f6','10yr '+D.tsy.toFixed(2)+'%');
+  html+=item('#9ca3af','DXY '+D.dxy.toFixed(1));
+  html+=item('#f97316','<span style="font-size:11px;">₿</span> $'+Math.round(D.btc).toLocaleString());
+  html+=div();
+  // Group 3: Equities
+  html+=item(D.spx<BASES.spx?'#ef4444':'#10b981','SPX '+Math.round(D.spx).toLocaleString());
+  html+=item(D.kospi<BASES.kospi?'#ef4444':'#10b981','KOSPI '+Math.round(D.kospi).toLocaleString());
+  html+=item(D.nikkei<BASES.nikkei?'#ef4444':'#10b981','N225 '+Math.round(D.nikkei).toLocaleString());
+  html+=div();
+  // Group 4: Shipping & strait
+  html+=item(D.hormuz>=40?'#10b981':'#ef4444','Hormuz '+D.hormuz+'/day');
+  html+=item(D.carriersOut>=9?'#ef4444':D.carriersOut>=5?'#f59e0b':'#10b981',D.carriersOut+'/'+D.carriersTotal+' carriers');
+  html+=item(D.bdi<BASES.bdi*0.6?'#ef4444':'#f59e0b','BDI '+D.bdi.toLocaleString());
+  html+=item(D.vlcc>300000?'#ef4444':D.vlcc>150000?'#f59e0b':'#9ca3af','VLCC $'+Math.round((D.vlcc||0)/1000)+'k/d');
+  html+=item(D.piWithdrawn?'#ef4444':'#10b981',D.piWithdrawn?'P&I Clubs: cancelled':'P&I Clubs: active');
+  // Group 5: Ceasefire — only show if talks or better (conflict active is redundant with topbar badge)
+  if(D.ceasefire!=='none'){
+    html+=div();
+    var cfColor={talks:'#f59e0b',announced:'#10b981',holding:'#10b981'}[D.ceasefire]||'#f59e0b';
+    var cfText={talks:'Ceasefire talks',announced:'Ceasefire announced',holding:'Ceasefire holding'}[D.ceasefire];
+    html+=item(cfColor,cfText);
+  }
+
+  var fi=$('ticker-items');if(fi)fi.innerHTML=html;
+}
+
+/* ── RENDER PHASE + DECISION ── */
+function renderPhase(){
+  var ph=calcPhase(),p=PHASES[ph];
+  var pc=$('phase-card');if(pc)pc.className='phase-card '+p.cls;
+  setText('phase-lbl',p.lbl);$('phase-lbl').style.color=p.col;
+  setText('phase-name',p.name);setText('phase-desc',p.desc);
+  var dc=$('decision');if(dc)dc.className='decision '+p.dcls;
+  var dl=$('drec-lbl');if(dl){dl.textContent='CURRENT RECOMMENDATION · '+p.lbl;dl.style.color=p.col;}
+  setText('drec-title',p.rec);setText('drec-sub',p.sub);
+  return ph;
+}
+
+/* ── RENDER ALLOC BARS ── */
+function renderAllocBars(ph){
+  var a=PHASES[ph].alloc,sym=D.navCcy||'£',tot=D.navTotal;
+  var html='';
+  KEYS.forEach(function(k){
+    var pct=a[k];
+    var valStr='';
+    if(D.navShowVal&&tot){
+      var v=Math.round(pct/100*tot);
+      valStr=sym+(v>=1e6?(v/1e6).toFixed(1)+'m':v>=1000?Math.round(v/1000)+'k':v);
+    }
+    html+='<div class="alloc-row"><div class="alloc-lbl">'+LBLS[k]+'</div>'
+      +'<div class="bar-wrap"><div class="bar" style="width:'+pct+'%;background:'+COLORS[k]+';transition:width .6s;"></div></div>'
+      +'<div class="alloc-pct">'+(D.navShowVal&&tot?valStr:pct+'%')+'</div></div>';
+  });
+  var ab=$('alloc-bars');if(ab)ab.innerHTML=html;
+}
+
+/* ── RENDER METRIC CARDS ── */
+// Cards grouped: [Oil & Gas ×3] [Macro ×4] [Equities ×4] [Shipping & Strait ×5 incl VLCC]
+// Rendered as 5-col grid → 3 rows, natural visual grouping via section headers
+var CARD_GROUPS=[
+  {label:'Oil & Gas', cards:[
+    {id:'kc-brent',lbl:'Brent crude',val:function(){return'$'+D.brent.toFixed(1);},col:function(){return D.brent>=120?'var(--red)':D.brent>=90?'var(--amber)':'var(--green)';},chg:function(){return fmtChg(D.brent,BASES.brent);},sub:'pre-conflict: $71.32',src:'Yahoo'},
+    {id:'kc-wti',lbl:'WTI crude',val:function(){return'$'+D.wti.toFixed(1);},col:function(){return D.wti>=100?'var(--red)':D.wti>=80?'var(--amber)':'var(--green)';},chg:function(){return fmtChg(D.wti,BASES.wti);},sub:'pre-conflict: $67.80',src:'Yahoo'},
+    {id:'kc-ttf',lbl:'EU TTF gas (€/MWh)',val:function(){return'€'+D.ttf.toFixed(1);},col:function(){return D.ttf>65?'var(--red)':D.ttf>40?'var(--amber)':'var(--green)';},chg:function(){return fmtChg(D.ttf,BASES.ttf);},sub:'pre-conflict: ~€30',src:'HormuzTracker'},
+  ]},
+  {label:'Macro & Rates', cards:[
+    {id:'kc-gold',lbl:'Gold (USD/oz)',val:function(){return'$'+Math.round(D.gold).toLocaleString();},col:function(){return'var(--text)';},chg:function(){return fmtChg(D.gold,BASES.gold);},sub:'safe haven benchmark',src:'Yahoo'},
+    {id:'kc-tsy',lbl:'US 10yr yield',val:function(){return D.tsy.toFixed(2)+'%';},col:function(){return D.tsy<4.0?'var(--green)':'var(--text)';},chg:function(){return{t:(D.tsy<4.0?'Below':'Above')+' 4.0% — recession signal',cls:D.tsy<4.0?'down':'up'};},sub:'<4.0% = recession signal',src:'Yahoo'},
+    {id:'kc-dxy',lbl:'USD index (DXY)',val:function(){return D.dxy.toFixed(1);},col:function(){return D.dxy>BASES.dxy?'var(--red)':'var(--green)';},chg:function(){return fmtChg(D.dxy,BASES.dxy);},sub:'↑ = EM pressure, risk-off',src:'Yahoo'},
+    {id:'kc-iea',lbl:'IEA reserves released',val:function(){return D.ieaMb+'mb';},col:function(){return'var(--amber)';},chg:function(){return{t:'of 400mb authorised · ~20 days cover',cls:'neutral'};},sub:'400mb = IEA max',src:'HormuzTracker'},
+  ]},
+  {label:'Equities', cards:[
+    {id:'kc-spx',lbl:'S&P 500',val:function(){return D.spx.toFixed(0);},col:function(){return D.spx<BASES.spx?'var(--red)':'var(--text)';},chg:function(){return fmtChg(D.spx,BASES.spx);},sub:'pre-conflict: ~5,840',src:'Yahoo'},
+    {id:'kc-kospi',lbl:'KOSPI (Seoul)',val:function(){return Math.round(D.kospi).toLocaleString();},col:function(){return D.kospi<BASES.kospi?'var(--red)':'var(--text)';},chg:function(){return fmtChg(D.kospi,BASES.kospi);},sub:'circuit breaker: –12% peak',src:'Yahoo'},
+    {id:'kc-nikkei',lbl:'Nikkei 225 (Tokyo)',val:function(){return Math.round(D.nikkei).toLocaleString();},col:function(){return D.nikkei<BASES.nikkei?'var(--red)':'var(--text)';},chg:function(){return fmtChg(D.nikkei,BASES.nikkei);},sub:'Japan: 90% ME oil imports',src:'Yahoo'},
+    {id:'kc-btc',lbl:'Bitcoin (USD)',val:function(){return'$'+Math.round(D.btc).toLocaleString();},col:function(){return'#f97316';},chg:function(){return fmtChg(D.btc,BASES.btc);},sub:'risk-on / risk-off signal',src:'Yahoo'},
+  ]},
+  {label:'Shipping & Strait', cards:[
+    {id:'kc-vlcc',lbl:'VLCC TD3C spot rate',val:function(){return D.vlcc?'$'+Math.round(D.vlcc/1000)+'k/day':'—';},col:function(){return D.vlcc>300000?'var(--red)':D.vlcc>150000?'var(--amber)':'var(--text)';},chg:function(){return fmtChg(D.vlcc,BASES.vlcc);},sub:'MEG–China, pre-conflict: ~$63k/day',src:'Baltic'},
+    {id:'kc-hormuz',lbl:'Hormuz vessels/day',val:function(){return String(D.hormuz);},col:function(){return D.hormuz>=40?'var(--green)':'var(--red)';},chg:function(){return{t:D.hormuz>=40?'Phase 1 trigger MET':'Below threshold (40 = Phase 1)',cls:D.hormuz>=40?'down':'up'};},sub:'trigger: 40+ = Phase 1',src:'HormuzTracker'},
+    {id:'kc-carriers',lbl:'Carrier suspensions',val:function(){return D.carriersOut+'/'+D.carriersTotal;},col:function(){return D.carriersOut>=9?'var(--red)':D.carriersOut>=5?'var(--amber)':'var(--green)';},chg:function(){return{t:D.carriersOut>=9?'All major lines halted':D.carriersOut+' lines halted',cls:D.carriersOut>=9?'up':'down'};},sub:'9/9 = full crisis',src:'HormuzTracker'},
+    {id:'kc-bdi',lbl:'Baltic Dry Index',val:function(){return D.bdi.toLocaleString();},col:function(){return D.bdi<BASES.bdi*0.5?'var(--red)':D.bdi<BASES.bdi*0.7?'var(--amber)':'var(--text)';},chg:function(){return fmtChg(D.bdi,BASES.bdi);},sub:'pre-conflict: ~1,850',src:'Yahoo'},
+    {id:'kc-ins',lbl:'P&I Club cover',val:function(){return D.piWithdrawn?'Cancelled':'Active';},col:function(){return D.piWithdrawn?'var(--red)':'var(--green)';},chg:function(){return{t:D.piWithdrawn?'All 13 IG P&I Clubs cancelled war-risk · surcharge: '+D.warRiskRange+'%':'International Group P&I cover active',cls:D.piWithdrawn?'up':'down'};},sub:'Reinstatement = Phase 1 trigger',src:'HormuzTracker'},
+  ]}
+];
+var CARDS=CARD_GROUPS.reduce(function(a,g){return a.concat(g.cards);},[]);
+
+function buildCards(){
+  var kg=$('kgrid');if(!kg)return;
+  var srcUrl={
+    'Yahoo':'https://finance.yahoo.com/',
+    'HormuzTracker':'https://www.hormuztracker.com/',
+    'Baltic':'https://www.balticexchange.com/en/data-services/market-information/tanker-report.html'
+  };
+  var html='';
+  CARD_GROUPS.forEach(function(g){
+    html+='<div style="grid-column:1/-1;font-family:var(--mono);font-size:9px;letter-spacing:0.15em;color:var(--muted);text-transform:uppercase;padding-top:4px;border-top:1px solid var(--border);margin-top:2px;">'+g.label+'</div>';
+    g.cards.forEach(function(c){
+      var bg=c.highlight?'background:var(--red-bg);border-color:var(--red-b);':'';
+      var url=srcUrl[c.src]||'#';
+      html+='<div class="kcard" id="'+c.id+'" style="'+bg+'">'
+        +'<a href="'+url+'" target="_blank" class="kbadge" id="'+c.id+'-bdg" style="text-decoration:none;cursor:pointer;" title="Source: '+c.src+'">—</a>'
+        +'<div class="kcard-lbl">'+c.lbl+'</div>'
+        +'<div class="kcard-val" id="'+c.id+'-val">—</div>'
+        +'<div class="kcard-chg" id="'+c.id+'-chg">—</div>'
+        +'<div class="kcard-sub">'+c.sub+'</div>'
+        +'</div>';
+    });
+  });
+  kg.innerHTML=html;
+}
+
+function updateCards(){
+  var srcStatus={Yahoo:D.srcYahoo,HormuzTracker:D.srcHormuz};
+  CARDS.forEach(function(c){
+    var vEl=$(c.id+'-val'),cEl=$(c.id+'-chg'),bEl=$(c.id+'-bdg');
+    if(vEl){vEl.textContent=c.val();vEl.style.color=c.col();}
+    if(cEl){var ch=c.chg();cEl.textContent=ch.t;cEl.className='kcard-chg '+(ch.cls||'');}
+    if(bEl){
+      var st=srcStatus[c.src]||'seeded';
+      bEl.textContent=st==='ok'?'LIVE':'22 MAR';
+      bEl.className='kbadge'+(st==='ok'?' live':'');
+    }
+  });
+}
+
+/* ── SIGNAL BOARD ── */
+function renderSignals(){
+  var rows=[
+    {n:'Hormuz vessels/day',v:D.hormuz+' vessels/day',trig:'40+ → Phase 1 | 80+ → Phase 2',st:D.hormuz>=80?'green':D.hormuz>=40?'amber':'red',src:'scrape'},
+    {n:'Brent crude (USD/bbl)',v:'$'+D.brent.toFixed(1),trig:'<$80 sustained → Phase 2 | $120+ ×3d → Bear',st:D.brent<80?'green':D.brent<100?'amber':'red',src:'auto'},
+    {n:'EU TTF gas (€/MWh)',v:'€'+D.ttf.toFixed(1),trig:'<€40 → normalising | >€80 → crisis',st:D.ttf<40?'green':D.ttf<65?'amber':'red',src:'scrape'},
+    {n:'P&I Club war-risk cover',v:D.piWithdrawn?'Cancelled — all 13 IG Clubs':'Active',trig:'All clubs cancelled = full crisis. Any reinstatement = Phase 1 trigger.',st:D.piWithdrawn?'red':'green',src:'scrape'},
+    {n:'Ceasefire status',v:{none:'Active conflict',talks:'Formal talks',announced:'Ceasefire announced',holding:'Ceasefire holding'}[D.ceasefire],trig:'Announced → Phase 2 immediately',st:{none:'red',talks:'amber',announced:'green',holding:'green'}[D.ceasefire],src:'scrape'},
+    {n:'US 10yr yield',v:D.tsy.toFixed(2)+'%',trig:'<4.0% = recession signal',st:D.tsy<4.0?'red':D.tsy<4.3?'amber':'green',src:'auto'},
+    {n:'IEA emergency reserves',v:D.ieaMb+'mb released',trig:'>380mb = critical | rebuild = normalisation',st:D.ieaMb>=400?'red':D.ieaMb>300?'amber':'green',src:'scrape'},
+    {n:'Carrier suspensions',v:D.carriersOut+'/'+D.carriersTotal+' lines suspended',trig:'All 9 suspended = full crisis | <5 = improving',st:D.carriersOut>=9?'red':D.carriersOut>=5?'amber':'green',src:'scrape'},
+    {n:'S&P 500',v:D.spx.toFixed(0),trig:'Recovery >5% from lows = risk appetite returning',st:D.spx>BASES.spx?'green':D.spx>5600?'amber':'red',src:'auto'},
+    {n:'Bitcoin (USD)',v:'$'+Math.round(D.btc).toLocaleString(),trig:'Recovery above pre-conflict = broad risk-on (Phase 2 confirm)',st:D.btc>BASES.btc?'green':D.btc>BASES.btc*0.8?'amber':'red',src:'auto'}
+  ];
+  var lbl={red:'RISK',amber:'CAUTION',green:'CLEAR'};
+  var srcLbl={auto:'Yahoo',scrape:'HormuzT.'};
+  var srcCls={auto:'pill-auto',scrape:'pill-scrape'};
+  var tb=$('sig-tbody');
+  if(tb)tb.innerHTML=rows.map(function(r){
+    return'<tr><td><strong style="font-size:12px;">'+r.n+'</strong></td>'
+      +'<td><span style="font-family:var(--mono);font-size:10px;color:var(--muted2);">'+r.v+'</span></td>'
+      +'<td><span style="font-size:10px;color:var(--muted2);">'+r.trig+'</span></td>'
+      +'<td><span class="pill pill-'+r.st+'">'+lbl[r.st]+'</span></td>'
+      +'<td><span class="pill '+srcCls[r.src]+'">'+srcLbl[r.src]+'</span></td></tr>';
+  }).join('');
+}
+
+/* ── SECURITIES ── */
+function buildSecurities(){
+  var tabs=$('sec-tabs'),bkts=$('sec-buckets');
+  if(!tabs||!bkts)return;
+  var keys=['cash','tres','gold','def','nrg','asia','eu','em','us','btc'];
+  keys.forEach(function(k,i){
+    var t=document.createElement('button');
+    t.className='sec-tab'+(i===0?' active':'');
+    t.textContent=BLBLS[k];
+    t.onclick=function(){
+      document.querySelectorAll('.sec-tab').forEach(function(x){x.classList.remove('active');});
+      document.querySelectorAll('.sec-bucket').forEach(function(x){x.classList.remove('active');});
+      t.classList.add('active');
+      var b=document.getElementById('sb-'+k);if(b)b.classList.add('active');
+    };
+    tabs.appendChild(t);
+    var b=document.createElement('div');
+    b.className='sec-bucket'+(i===0?' active':'');b.id='sb-'+k;
+    b.innerHTML='<table class="sec-table"><thead><tr><th style="width:11%">Ticker</th><th style="width:28%">Name</th><th style="width:8%">Type</th><th style="width:8%">Rating</th><th>Thesis</th></tr></thead><tbody>'
+      +(SECS[k]||[]).map(function(s){
+        return'<tr><td class="sticker">'+s.t+'</td><td style="color:var(--muted2);font-size:11px;">'+s.n+'</td>'
+          +'<td><span class="sbadge sb-'+s.tp+'">'+s.tp.toUpperCase()+'</span></td>'
+          +'<td class="srat-'+s.r+'">'+s.r.toUpperCase()+'</td>'
+          +'<td style="font-size:10px;color:var(--muted2);">'+s.w+'</td></tr>';
+      }).join('')
+      +'</tbody></table>';
+    bkts.appendChild(b);
+  });
+}
+
+/* ── PLAYBOOK ── */
+function buildPlaybook(){
+  var el=$('playbook');if(!el)return;
+  var cards=[
+    {k:0,pts:['60% cash in T-Bills (~5% yield). Roll monthly for full optionality.','22% US 7-10yr Treasuries (IEF/TLT). Rallies if Fed cuts into recession.','12% physical gold (GLD/IAU/SGLN). Tail hedge for escalation + USD risk.','6% defence/aerospace (ITA/DFNS). Structural NATO spending — not conflict-dependent.','Zero equity outside defence.','All triggers auto-monitored.']},
+    {k:1,pts:['Reduce cash 60% → 45%. Deploy ~15% of NAV into risk.','Add 13% energy: XLE, SHEL, TTE, BP — integrated majors over pure E&P.','Add 7% Asia: EWJ Japan + EWY Korea — both overshot to the downside.','Add 5% EU equities hedged (HEDJ). Early positioning before Phase 2.','Add 3% EM via INDA.','Trim Treasuries 22% → 12%. Stop-loss: Brent >$120 → revert to Phase 0.']},
+    {k:2,pts:['Primary alpha window. Deploy within 5 business days of ceasefire.','Reduce cash 45% → 12%. Deploy ~33% of NAV rapidly.','Energy 18%, Asia 14%, EU 11%, EM 8%, US equities 14%, Bitcoin 7%.','US equities (SPY/QQQ/XLF): sold on macro fear not earnings — snap back hard.','Bitcoin (IBIT/BTCE): high-beta risk recovers sharply as sentiment turns.','Trim gold 10% → 5%. Full ceasefire rally moves fast — speed matters.']},
+    {k:'bear',pts:['Do NOT add equity. If in Phase 1, reduce back to Phase 0.','Increase Treasuries to 28% — extend duration via TLT.','Increase gold to 20%. In a 1973-style shock, gold outperforms all.','Tail hedges: OTM Brent calls ($130 strike, 3-month expiry).','Short GBP/USD or EUR/USD. Both deteriorate under prolonged energy shock.','Exit trigger: any credible ceasefire → immediately move to Phase 2.']}
+  ];
+  el.innerHTML=cards.map(function(c){
+    var p=PHASES[c.k];
+    return'<div class="pb-card" style="background:var(--'+c.k+'bg,var(--'+p.cls+')--);border-color:var(--'+p.cls+'b,var(--border));" >'
+      +'<span class="pb-trig" style="background:var(--bg3);color:'+p.col+';border:1px solid '+p.col+'40;">'+p.lbl+'</span>'
+      +'<h4 style="color:'+p.col+';">'+p.name+'</h4>'
+      +'<ul>'+c.pts.map(function(pt){return'<li>'+pt+'</li>';}).join('')+'</ul>'
+      +'</div>';
+  }).join('');
+}
+
+/* ── CHARTS ── */
+var chartMode='brent',showEv=true,priceChart=null,allocChart=null,_cachedEvLines=[];
+
+function setChart(m){
+  chartMode=m;
+  var bb=$('btn-brent'),bw=$('btn-wti');
+  if(bb){bb.style.background=m==='brent'?'rgba(245,158,11,0.15)':'';bb.style.borderColor=m==='brent'?'#f59e0b':'';bb.style.color=m==='brent'?'#f59e0b':'';}
+  if(bw){bw.style.background=m==='wti'?'rgba(239,68,68,0.15)':'';bw.style.borderColor=m==='wti'?'#ef4444':'';bw.style.color=m==='wti'?'#ef4444':'';}
+  buildPriceChart();
+}
+function toggleEv(){
+  showEv=!showEv;
+  var be=$('btn-ev');
+  if(be){be.style.background=showEv?'rgba(59,130,246,0.15)':'';be.style.borderColor=showEv?'#3b82f6':'';be.style.color=showEv?'#3b82f6':'';}
+  if(priceChart){priceChart._evLines=showEv?_cachedEvLines:[];try{priceChart.update();}catch(e){buildPriceChart();}}
+  else{buildPriceChart();}
+}
+
+var annotationsReady=false;
+
+// Inline Chart.js plugin — draws event lines on every afterDraw, no CDN needed
+var eventsPlugin={
+  id:'eventsPlugin',
+  afterDraw:function(chart){
+    if(!showEv||!chart._evLines||!chart._evLines.length)return;
+    var ctx=chart.ctx;
+    var xScale=chart.scales.x,yScale=chart.scales.y;
+    if(!xScale||!yScale)return;
+    ctx.save();
+    chart._evLines.forEach(function(ev){
+      var x=xScale.getPixelForValue(ev.idx);
+      var yTop=yScale.top,yBot=yScale.bottom;
+      ctx.beginPath();ctx.setLineDash([3,3]);
+      ctx.strokeStyle=ev.c;ctx.lineWidth=1.5;ctx.globalAlpha=0.75;
+      ctx.moveTo(x,yTop);ctx.lineTo(x,yBot);ctx.stroke();
+      ctx.setLineDash([]);ctx.globalAlpha=1;
+      ctx.font="bold 8.5px 'IBM Plex Mono',monospace";
+      var tw=ctx.measureText(ev.lbl).width;
+      var textY=yTop+(ev.alt?20:38);
+      ctx.fillStyle='rgba(10,12,15,0.85)';
+      ctx.fillRect(x+3,textY-11,tw+8,14);
+      ctx.fillStyle=ev.c;
+      ctx.fillText(ev.lbl,x+7,textY);
+    });
+    ctx.restore();
+  }
+};
+
+function buildPriceChart(){
+  if(typeof Chart==='undefined')return;
+  var el=$('priceChart');if(!el)return;
+  var isBrent=chartMode==='brent';
+  var data=isBrent?D.brentH:D.wtiH;
+  var labels=data.map(function(p){var d=new Date(p.t*1000);return(d.getMonth()+1)+'/'+d.getDate();});
+  var values=data.map(function(p){return parseFloat(p.v.toFixed(2));});
+  var color=isBrent?'#f59e0b':'#ef4444';
+  var bgColor=isBrent?'rgba(245,158,11,0.07)':'rgba(239,68,68,0.07)';
+  setText('pchart-title',(isBrent?'Brent':'WTI')+' crude — since 28 Feb 2026 (conflict start)');
+  setText('pchart-sub','Last: $'+values[values.length-1].toFixed(1)+' · '+data.length+' data points');
+
+  var evLines=[];
+  GEO.forEach(function(ev,i){
+    var evTs=new Date(ev.date).getTime()/1000;
+    var closest=-1,minDiff=Infinity;
+    data.forEach(function(p,idx){var d=Math.abs(p.t-evTs);if(d<minDiff){minDiff=d;closest=idx;}});
+    if(closest>=0&&minDiff<4*86400)evLines.push({idx:closest,lbl:ev.lbl,c:ev.c,alt:i%2===0});
+  });
+
+  if(priceChart){try{priceChart.destroy();}catch(e){}}
+  priceChart=new Chart(el.getContext('2d'),{
+    type:'line',
+    data:{labels:labels,datasets:[{data:values,borderColor:color,backgroundColor:bgColor,fill:true,tension:0.3,pointRadius:1.5,borderWidth:2}]},
+    plugins:[eventsPlugin],
+    options:{responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:false}},
+      scales:{
+        x:{grid:{color:'rgba(255,255,255,0.04)'},ticks:{color:'#6b7280',font:{size:9},maxTicksLimit:10}},
+        y:{grid:{color:'rgba(255,255,255,0.04)'},ticks:{color:'#6b7280',font:{size:9},callback:function(v){return'$'+v.toFixed(0);}}}
+      }
+    }
+  });
+  priceChart._evLines=showEv?evLines:[];
+  _cachedEvLines=evLines;
+}
+
+function buildAllocChart(ph){
+  if(typeof Chart==='undefined')return;
+  var el=$('allocChart');if(!el)return;
+  var a=PHASES[ph].alloc;
+  if(allocChart){try{allocChart.destroy();}catch(e){}}
+  allocChart=new Chart(el.getContext('2d'),{
+    type:'doughnut',
+    data:{
+      labels:['Cash','Treasuries','Gold','Defence','Energy','Asia','EU','EM','US equities','Bitcoin'],
+      datasets:[{data:[a.cash,a.tres,a.gold,a.def,a.nrg,a.asia,a.eu,a.em,a.us,a.btc],
+        backgroundColor:['#6b7280','#3b82f6','#f59e0b','#8b5cf6','#ef4444','#10b981','#06b6d4','#84cc16','#a78bfa','#f97316'],
+        borderWidth:0,hoverOffset:4}]
+    },
+    options:{responsive:true,maintainAspectRatio:false,cutout:'62%',
+      plugins:{legend:{display:true,position:'right',labels:{color:'#9ca3af',font:{size:9},boxWidth:7,padding:4,
+        filter:function(item){return item.parsed>0;}}}}
+    }
+  });
+}
+
+/* ── NAV REBALANCING ── */
+function buildHoldingsGrid(){
+  var g=$('holdings-grid');if(!g)return;
+  g.innerHTML=KEYS.map(function(k){
+    return'<div class="fg"><div class="fl">'+LBLS[k]+'</div>'
+      +'<input class="fi" id="h-'+k+'" type="number" placeholder="0" step="1000" value="'+(D.holdings[k]||'')+'" oninput="D.holdings[\''+k+'\']=parseFloat(this.value)||0;recalc();"></div>';
+  }).join('');
+}
+function toggleNav(){
+  D.navOpen=$('nav-chk').checked;
+  var nb=$('nav-body');if(nb)nb.classList.toggle('open',D.navOpen);
+  if(D.navOpen){buildHoldingsGrid();recalc();}
+  save();
+}
+function toggleNavVal(){
+  D.navShowVal=!D.navShowVal;
+  setText('navtog',D.navShowVal?'show %':'show £');
+  renderAllocBars(calcPhase());save();
+}
+function recalc(){
+  var total=parseFloat(($('ntotal')||{}).value)||null;
+  var ccy=($('nccy')||{}).value||'£';
+  var minT=parseFloat(($('nmin')||{}).value)||5000;
+  var ps=($('nphase')||{}).value||'auto';
+  D.navTotal=total;D.navCcy=ccy;D.navMin=minT;
+  var out=$('rebal-out');if(!out)return;
+  if(!total){out.innerHTML='<div style="font-size:11px;color:var(--muted);padding:8px 0;">Enter total portfolio NAV above.</div>';return;}
+  var ph=ps==='auto'?calcPhase():ps;
+  var a=PHASES[ph].alloc;
+  var sym=ccy;
+  var buy=0,sell=0,rows='';
+  KEYS.forEach(function(k){
+    var tgt=a[k]/100*total,cur=D.holdings[k]||0,diff=tgt-cur;
+    var cls=Math.abs(diff)<minT?'no-a':diff>0?'buy-a':'sell-a';
+    var act=Math.abs(diff)<minT?'—':(diff>0?'BUY ':'SELL ')+sym+Math.abs(diff).toLocaleString('en',{maximumFractionDigits:0});
+    if(diff>minT)buy+=diff;if(diff<-minT)sell+=Math.abs(diff);
+    rows+='<tr><td style="display:flex;align-items:center;gap:6px;"><span style="width:7px;height:7px;border-radius:50%;background:'+COLORS[k]+';display:inline-block;flex-shrink:0;"></span>'+LBLS[k]+'</td>'
+      +'<td>'+a[k]+'%</td><td>'+sym+Math.round(tgt).toLocaleString()+'</td>'
+      +'<td>'+(cur>0?sym+Math.round(cur).toLocaleString():'—')+'</td>'
+      +'<td>'+(cur>0?((cur/total)*100).toFixed(1)+'%':'—')+'</td>'
+      +'<td class="'+cls+'">'+act+'</td></tr>';
+  });
+  out.innerHTML='<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:12px;">'
+    +'<div style="background:var(--bg3);border-radius:6px;padding:10px 12px;border:1px solid var(--border);"><div style="font-family:var(--mono);font-size:9px;color:var(--muted);margin-bottom:3px;">PORTFOLIO NAV</div><div style="font-family:var(--mono);font-size:16px;font-weight:500;">'+sym+total.toLocaleString()+'</div></div>'
+    +'<div style="background:var(--green-bg);border-radius:6px;padding:10px 12px;border:1px solid var(--green-b);"><div style="font-family:var(--mono);font-size:9px;color:var(--muted);margin-bottom:3px;">TO BUY</div><div style="font-family:var(--mono);font-size:16px;font-weight:500;color:var(--green);">'+sym+Math.round(buy).toLocaleString()+'</div></div>'
+    +'<div style="background:var(--red-bg);border-radius:6px;padding:10px 12px;border:1px solid var(--red-b);"><div style="font-family:var(--mono);font-size:9px;color:var(--muted);margin-bottom:3px;">TO SELL</div><div style="font-family:var(--mono);font-size:16px;font-weight:500;color:var(--red);">'+sym+Math.round(sell).toLocaleString()+'</div></div>'
+    +'</div><table class="rbal-table"><thead><tr><th>Bucket</th><th>Target %</th><th>Target '+sym+'</th><th>Current '+sym+'</th><th>Current %</th><th>Action</th></tr></thead><tbody>'+rows+'</tbody></table>'
+    +'<div style="font-size:10px;color:var(--muted);margin-top:8px;">Min trade: '+sym+minT.toLocaleString()+'. Not financial advice.</div>';
+  renderAllocBars(ph);
+}
+
+/* ── OVERRIDES ── */
+function buildOverrides(){
+  var fields=[
+    {k:'brent',lbl:'Brent (USD)',step:0.1,ph:'e.g. 112.2'},
+    {k:'wti',lbl:'WTI (USD)',step:0.1,ph:'e.g. 98.3'},
+    {k:'gold',lbl:'Gold (USD/oz)',step:1,ph:'e.g. 4575'},
+    {k:'spx',lbl:'S&P 500',step:1,ph:'e.g. 6506'},
+    {k:'tsy',lbl:'US 10yr (%)',step:0.01,ph:'e.g. 4.39'},
+    {k:'btc',lbl:'Bitcoin (USD)',step:100,ph:'e.g. 68900'},
+    {k:'hormuz',lbl:'Hormuz vessels',step:1,ph:'e.g. 5'},
+    {k:'ttf',lbl:'TTF gas (€/MWh)',step:0.1,ph:'e.g. 60.2'},
+    {k:'dxy',lbl:'DXY',step:0.1,ph:'e.g. 99.5'},
+    {k:'kospi',lbl:'KOSPI',step:1,ph:'e.g. 2280'},
+    {k:'nikkei',lbl:'Nikkei 225',step:10,ph:'e.g. 35800'},
+    {k:'bdi',lbl:'Baltic Dry Index',step:10,ph:'e.g. 890'},
+    {k:'vlcc',lbl:'VLCC TD3C ($/day)',step:1000,ph:'e.g. 285000'}
+  ];
+  var g=$('ov-grid');if(!g)return;
+  g.innerHTML=fields.map(function(f){
+    return'<div class="fg"><div class="fl">'+f.lbl+'</div>'
+      +'<input class="fi" id="ov-'+f.k+'" type="number" step="'+f.step+'" placeholder="'+f.ph+'" value="'+(D.overrides&&D.overrides[f.k]?D.overrides[f.k]:'')+'"></div>';
+  }).join('');
+}
+function saveOv(){
+  var fields=['brent','wti','gold','spx','tsy','btc','hormuz','ttf','dxy','kospi','nikkei','bdi','vlcc'];
+  if(!D.overrides)D.overrides={};
+  fields.forEach(function(k){
+    var el=$('ov-'+k);
+    if(el&&el.value!==''){var v=parseFloat(el.value);if(!isNaN(v)){D.overrides[k]=v;D[k]=v;}}
+    else if(el&&el.value===''){delete D.overrides[k];}
+  });
+  save();render();
+  var m=$('ov-msg');if(m){m.textContent='Saved '+new Date().toLocaleTimeString();setTimeout(function(){m.textContent='';},3000);}
+}
+function clearOv(){
+  D.overrides={};
+  var fields=['brent','wti','gold','spx','tsy','btc','hormuz','ttf','dxy','kospi','nikkei','bdi','vlcc'];
+  fields.forEach(function(k){var el=$('ov-'+k);if(el)el.value='';});
+  save();
+}
+
+/* ── NEWS FEED ── */
+function renderNews(){
+  var items=[
+    {c:'#ef4444',t:'22 Mar',tx:'21-nation coalition joint statement on Strait. EU fails to agree naval extension.'},
+    {c:'#f59e0b',t:'19 Mar',tx:'IEA: 400mb emergency reserves released. Brent eases from $119 peak to ~$92.'},
+    {c:'#ef4444',t:'13 Mar',tx:"Brent above $100. Iran's new Supreme Leader pledges Hormuz closure continues."},
+    {c:'#f59e0b',t:'10 Mar',tx:'GCC production down 10mb/d. ADNOC Ruwais refinery struck. Bahrain force majeure.'},
+    {c:'#ef4444',t:'9 Mar',tx:'Brent hits $119.50 intraday. Strikes on Shahran oil depot, Tehran.'},
+    {c:'#ef4444',t:'4 Mar',tx:'Hormuz officially closed. KOSPI -12% circuit breaker. TTF gas doubles to €60/MWh.'},
+    {c:'#ef4444',t:'28 Feb',tx:'Operation Epic Fury initiated. US-Israel airstrikes on Iran. Brent +8% to $77.'}
+  ];
+  var nf=$('news-feed');
+  if(nf)nf.innerHTML=items.map(function(i){
+    return'<div class="news-item"><div class="n-dot" style="background:'+i.c+'"></div><div><div class="n-time">'+i.t+'</div><div class="n-text">'+i.tx+'</div></div></div>';
+  }).join('');
+}
+
+/* ── SAVE/LOAD ── */
+function save(){try{localStorage.setItem('h_v5',JSON.stringify({navOpen:D.navOpen,navShowVal:D.navShowVal,navTotal:D.navTotal,navCcy:D.navCcy,navMin:D.navMin,holdings:D.holdings,overrides:D.overrides}));}catch(e){}}
+function load(){try{var s=localStorage.getItem('h_v5');if(s){var p=JSON.parse(s);['navOpen','navShowVal','navTotal','navCcy','navMin','holdings','overrides'].forEach(function(k){if(p[k]!==undefined)D[k]=p[k];});if(D.overrides)Object.keys(D.overrides).forEach(function(k){if(D.overrides[k])D[k]=D.overrides[k];});}}catch(e){}}
+
+/* ── MAIN RENDER ── */
+function render(){
+  var ph=renderPhase();
+  renderAllocBars(ph);
+  renderTicker();
+  updateCards();
+  renderSignals();
+  renderNews();
+  if(typeof Chart!=='undefined'){
+    buildPriceChart();
+    buildAllocChart(ph);
+  }
+  if(D.navOpen&&D.navTotal)recalc();
+  setText('stext','22 Mar 2026 snapshot'+(D.srcYahoo==='ok'?' → live data loaded':''));
+}
+
+/* ── LIVE FETCH ── */
+var PROXIES=['https://api.allorigins.win/get?url=','https://corsproxy.io/?','https://api.codetabs.com/v1/proxy?quest='];
+var PROXY_JSON=[true,false,false];
+
+async function safeProxy(url){
+  try{var r=await fetch(url,{mode:'cors',cache:'no-store'});if(r.ok){var t=await r.text();if(t&&t.length>100)return t;}}catch(e){}
+  for(var i=0;i<PROXIES.length;i++){
+    try{var pr=await fetch(PROXIES[i]+encodeURIComponent(url),{cache:'no-store'});if(!pr.ok)continue;
+    var txt=PROXY_JSON[i]?(await pr.json()).contents:await pr.text();
+    if(txt&&txt.length>100)return txt;}catch(e){}
+  }
+  return null;
+}
+
+async function fetchYahoo(sym,range){
+  var urls=['https://query1.finance.yahoo.com/v8/finance/chart/'+sym+'?interval=1d&range='+(range||'5d'),
+    'https://query2.finance.yahoo.com/v8/finance/chart/'+sym+'?interval=1d&range='+(range||'5d')];
+  for(var i=0;i<urls.length;i++){
+    var txt=await safeProxy(urls[i]);
+    if(!txt)continue;
+    try{var p=JSON.parse(txt).chart.result[0];var cl=p.indicators.quote[0].close;var ts=p.timestamp;
+      var d=cl.map(function(c,j){return c!==null?{t:ts[j],v:c}:null;}).filter(Boolean);
+      if(d.length)return d;}catch(e){}
+  }
+  return null;
+}
+
+async function fetchHormuz(){
+  var html=await safeProxy('https://www.hormuztracker.com/');
+  if(!html)return false;
+  try{
+    var vm=html.match(/~\s*(\d+)\s*\n[\s\S]{0,10}Vessels detected today/i)||html.match(/~\s*(\d+)\s*Vessels detected today/i)||html.match(/~\s*([\d]+)ships?\s*detected\s*today/i);
+    if(vm){var c=parseInt(vm[1],10);if(c<500)D.hormuz=c;}
+    var tm=html.match(/EU Gas \(TTF\)\s*\n+\s*€\s*([\d.]+)/i)||html.match(/EU Gas \(TTF\)€([\d.]+)/i);
+    if(tm){var tv=parseFloat(tm[1]);if(tv>5&&tv<500)D.ttf=tv;}
+    D.piWithdrawn=/Withdrawn/i.test(html)&&/P.{0,3}I/i.test(html);
+    D.cancelledClubs=(html.match(/Cancelled/gi)||[]).length;
+    var wm=html.match(/[→]\s*([\d.]+)%\s*[–\-]\s*([\d.]+)/i);
+    if(wm)D.warRiskRange=wm[1]+'–'+wm[2]+'%';
+    var cm=html.match(/(\d+)\/(\d+)\s*Major Lines Suspended/i);
+    if(cm){D.carriersOut=parseInt(cm[1],10);D.carriersTotal=parseInt(cm[2],10);}
+    var dm=html.match(/Day\s+(\d+)/i);if(dm)D.conflictDay=parseInt(dm[1],10);
+    if(html.match(/400M\s*barrel|400\s*million\s*barrel/i))D.ieaMb=400;
+    var lc=html.toLowerCase();
+    if(lc.includes('ceasefire holding'))D.ceasefire='holding';
+    else if(lc.includes('ceasefire announced'))D.ceasefire='announced';
+    else if(lc.includes('ceasefire talks')||lc.includes('peace talks'))D.ceasefire='talks';
+    else D.ceasefire='none';
+    D.srcHormuz='ok';return true;
+  }catch(e){D.srcHormuz='error';return false;}
+}
+
+async function doRefresh(){
+  var rb=$('rbtn');if(rb)rb.textContent='↻ Loading…';
+  try{
+    var [bD,wD,gD,sD,tD,btcD,dxyD,kD,nD,bdiD]=await Promise.all([
+      fetchYahoo('BZ=F','60d'),fetchYahoo('CL=F','60d'),fetchYahoo('GC=F','5d'),
+      fetchYahoo('%5EGSPC','5d'),fetchYahoo('%5ETNX','5d'),fetchYahoo('BTC-USD','5d'),
+      fetchYahoo('DX-Y.NYB','5d'),fetchYahoo('%5EKS11','5d'),fetchYahoo('%5EN225','5d'),
+      fetchYahoo('%5EBDI','5d')
+    ]);
+    function last(a){return a&&a.length?a[a.length-1].v:null;}
+    if(bD&&bD.length){D.brent=last(bD);D.brentH=bD.slice(-30);D.srcYahoo='ok';}
+    if(wD&&wD.length){D.wti=last(wD);D.wtiH=wD.slice(-30);}
+    if(gD)D.gold=last(gD);if(sD)D.spx=last(sD);if(tD)D.tsy=last(tD);
+    if(btcD)D.btc=last(btcD);if(dxyD)D.dxy=last(dxyD);
+    if(kD)D.kospi=last(kD);if(nD)D.nikkei=last(nD);
+    if(bdiD)D.bdi=last(bdiD);
+    await fetchHormuz();
+    setText('lupd','Updated '+new Date().toLocaleTimeString());
+    save();render();
+  }catch(e){}
+  if(rb)rb.textContent='↻ Refresh';
+}
+
+function doExport(){
+  try{var b=new Blob([JSON.stringify(D,null,2)],{type:'application/json'});var a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='hormuz_'+new Date().toISOString().split('T')[0]+'.json';a.click();}catch(e){}
+}
+
+/* ── BOOT ── everything runs synchronously, no waiting */
+load();
+buildCards();
+buildSecurities();
+buildPlaybook();
+buildOverrides();
+render();
+
+/* charts load async — render again when ready */
+(function(){
+  var s=document.createElement('script');
+  s.src='https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js';
+  s.onload=function(){
+    window.ChartAnnotation=null;
+    var a=document.createElement('script');
+    a.src='https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3.0.1/dist/chartjs-plugin-annotation.min.js';
+    a.onload=function(){
+      // Chart.js 4 requires explicit registration
+      try{
+        if(window.Chart&&window.ChartAnnotation){
+          Chart.register(window.ChartAnnotation);
+          annotationsReady=true;
+        }
+      }catch(e){}
+      buildPriceChart();buildAllocChart(calcPhase());
+    };
+    a.onerror=function(){buildPriceChart();buildAllocChart(calcPhase());};
+    document.head.appendChild(a);
+  };
+  s.onerror=function(){};
+  document.head.appendChild(s);
+  /* auto-refresh every 15 min if in a real browser */
+  setInterval(doRefresh,15*60*1000);
+})();
+</script>
+</body>
+</html>
