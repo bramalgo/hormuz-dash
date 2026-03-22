@@ -105,8 +105,8 @@ body{background:var(--bg);color:var(--text);font-family:var(--sans);font-size:13
 .pb-card{border-radius:8px;padding:14px;border:1px solid;}
 .pb-trig{font-family:var(--mono);font-size:9px;padding:2px 7px;border-radius:3px;display:inline-block;margin-bottom:6px;}
 .pb-card h4{font-size:12px;font-weight:500;margin-bottom:6px;}
-.pb-card li{font-size:10px;color:var(--muted2);line-height:1.4;padding-left:12px;position:relative;margin-bottom:3px;}
-.pb-card li::before{content:'›';position:absolute;left:0;color:var(--muted);}
+.pb-card-pt{font-size:10px;color:var(--muted2);line-height:1.5;padding-left:14px;position:relative;margin-bottom:4px;}
+.pb-card-pt::before{content:'›';position:absolute;left:0;color:var(--muted);font-weight:500;}
 .nav-body{overflow:hidden;max-height:0;transition:max-height .35s ease,opacity .25s ease;opacity:0;}
 .nav-body.open{max-height:600px;opacity:1;}
 .toggle{position:relative;width:34px;height:18px;cursor:pointer;flex-shrink:0;}
@@ -148,6 +148,10 @@ select.fi option{background:var(--bg3);}
 @media(max-width:600px){
   #mob-bar{display:flex!important;}
   :root{--th:68px;--tkh:30px;}
+  /* Fix sticky context — remove overflow from elements that break it */
+  .sidebar{overflow:visible!important;-webkit-overflow-scrolling:auto!important;}
+  .main{overflow:visible!important;-webkit-overflow-scrolling:auto!important;}
+  body{overflow-x:hidden;}
   /* Topbar — 2-row on mobile */
   .topbar{padding:4px 10px 4px;height:auto;flex-direction:column;align-items:stretch;gap:5px;}
   .topbar>div:first-child{display:flex;align-items:center;justify-content:space-between;width:100%;}
@@ -190,11 +194,14 @@ select.fi option{background:var(--bg3);}
   .kcard-sub{font-size:8px!important;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
   .kbadge{font-size:6px!important;padding:1px 3px!important;top:5px;right:5px;}
   /* Charts: single col, hide donut */
-  .two-col{display:block;}
+  .two-col{display:flex;flex-direction:column;}
   .two-col>*{margin-bottom:8px;}
-  .two-col>div:last-child{display:none;}
+  .two-col>div:last-child{display:block;}
   .chart-wrap{padding:10px 12px;}
   .chart-wrap canvas{max-height:180px;}
+  #allocChart{max-height:160px!important;}
+  .chart-wrap div[style*="height:220px"]{height:160px!important;}
+  .chart-wrap{padding:10px 12px;}
   /* Signal table: hide trigger + source cols */
   .ind-table{font-size:10px;}
   .ind-table th,.ind-table td{padding:6px 5px;}
@@ -204,7 +211,7 @@ select.fi option{background:var(--bg3);}
   .pb-grid{display:block;}
   .pb-grid>*{margin-bottom:8px;}
   .pb-card{padding:10px 12px;}
-  .pb-card li{font-size:10px;}
+  .pb-card-pt{font-size:10px;}
   /* Overrides grid */
   .override-grid{grid-template-columns:1fr 1fr;}
   /* Panel padding */
@@ -629,10 +636,12 @@ function buildCards(){
   var html='';
   CARD_GROUPS.forEach(function(g){
     html+='<div style="grid-column:1/-1;font-family:var(--mono);font-size:9px;letter-spacing:0.15em;color:var(--muted);text-transform:uppercase;padding-top:4px;border-top:1px solid var(--border);margin-top:2px;">'+g.label+'</div>';
-    g.cards.forEach(function(c){
+    g.cards.forEach(function(c,ci){
       var bg=c.highlight?'background:var(--red-bg);border-color:var(--red-b);':'';
       var url=srcUrl[c.src]||'#';
-      html+='<div class="kcard" id="'+c.id+'" style="'+bg+'">'
+      // Last card in odd-count group spans full width (fixes gap in 2-col mobile grid)
+      var fullSpan=(g.cards.length%2===1&&ci===g.cards.length-1)?' kcard-full':'';
+      html+='<div class="kcard'+fullSpan+'" id="'+c.id+'" style="'+bg+'">'
         +'<a href="'+url+'" target="_blank" class="kbadge" id="'+c.id+'-bdg" style="text-decoration:none;cursor:pointer;" title="Source: '+c.src+'">—</a>'
         +'<div class="kcard-lbl">'+c.lbl+'</div>'
         +'<div class="kcard-val" id="'+c.id+'-val">—</div>'
@@ -729,7 +738,7 @@ function buildPlaybook(){
     return'<div class="pb-card" style="background:var(--'+c.k+'bg,var(--'+p.cls+')--);border-color:var(--'+p.cls+'b,var(--border));" >'
       +'<span class="pb-trig" style="background:var(--bg3);color:'+p.col+';border:1px solid '+p.col+'40;">'+p.lbl+'</span>'
       +'<h4 style="color:'+p.col+';">'+p.name+'</h4>'
-      +'<ul>'+c.pts.map(function(pt){return'<li>'+pt+'</li>';}).join('')+'</ul>'
+      +'<div>'+c.pts.map(function(pt){return'<div class="pb-card-pt">'+pt+'</div>';}).join('')+'</div>'
       +'</div>';
   }).join('');
 }
@@ -763,21 +772,65 @@ var eventsPlugin={
     var xScale=chart.scales.x,yScale=chart.scales.y;
     if(!xScale||!yScale)return;
     ctx.save();
-    chart._evLines.forEach(function(ev){
+
+    var yTop=yScale.top, yBot=yScale.bottom, chartH=yBot-yTop;
+    var xLeft=xScale.left, xRight=xScale.right;
+    var FONT='bold 8px \'IBM Plex Mono\',monospace';
+    var PAD=4; // padding inside label pill
+    var LBL_H=12; // label height when rotated
+    var MARGIN=6; // keep away from top/bottom edges
+
+    // Pre-compute positions and alternate heights to avoid overlap
+    // Use 4 vertical slots across chart height
+    var slots=[
+      yTop + MARGIN,
+      yTop + chartH*0.22,
+      yTop + chartH*0.44,
+      yTop + chartH*0.66
+    ];
+
+    chart._evLines.forEach(function(ev,i){
       var x=xScale.getPixelForValue(ev.idx);
-      var yTop=yScale.top,yBot=yScale.bottom;
+      // Clamp x to stay within chart area
+      if(x<xLeft+2||x>xRight-2)return;
+
+      // Draw dashed line
       ctx.beginPath();ctx.setLineDash([3,3]);
-      ctx.strokeStyle=ev.c;ctx.lineWidth=1.5;ctx.globalAlpha=0.75;
-      ctx.moveTo(x,yTop);ctx.lineTo(x,yBot);ctx.stroke();
-      ctx.setLineDash([]);ctx.globalAlpha=1;
-      ctx.font="bold 8.5px 'IBM Plex Mono',monospace";
+      ctx.strokeStyle=ev.c;ctx.lineWidth=1.5;ctx.globalAlpha=0.65;
+      ctx.moveTo(x,yTop);ctx.lineTo(x,yBot);
+      ctx.stroke();ctx.setLineDash([]);ctx.globalAlpha=1;
+
+      // Pick vertical slot by index (cycles through 4 slots)
+      var labelY=slots[i%slots.length];
+
+      // Draw label — rotated 90° counterclockwise
+      ctx.save();
+      ctx.font=FONT;
       var tw=ctx.measureText(ev.lbl).width;
-      var textY=yTop+(ev.alt?20:38);
-      ctx.fillStyle='rgba(10,12,15,0.85)';
-      ctx.fillRect(x+3,textY-11,tw+8,14);
+
+      // Clamp labelY so pill stays inside chart vertically
+      // Rotated: pill goes from labelY to labelY+tw (downward in original coords)
+      var pillEnd=labelY+tw+PAD*2;
+      if(pillEnd>yBot-MARGIN)labelY=yBot-MARGIN-tw-PAD*2;
+      if(labelY<yTop+MARGIN)labelY=yTop+MARGIN;
+
+      ctx.translate(x, labelY);
+      ctx.rotate(-Math.PI/2);
+      // Now: right = up, left = down in original coords
+      // Draw pill background
+      ctx.fillStyle='rgba(10,12,15,0.9)';
+      ctx.fillRect(-tw-PAD, -LBL_H/2, tw+PAD*2, LBL_H);
+      // Border
+      ctx.strokeStyle=ev.c;ctx.lineWidth=0.8;ctx.globalAlpha=0.7;
+      ctx.strokeRect(-tw-PAD, -LBL_H/2, tw+PAD*2, LBL_H);
+      ctx.globalAlpha=1;
+      // Text
       ctx.fillStyle=ev.c;
-      ctx.fillText(ev.lbl,x+7,textY);
+      ctx.textBaseline='middle';
+      ctx.fillText(ev.lbl,-tw,0);
+      ctx.restore();
     });
+
     ctx.restore();
   }
 };
