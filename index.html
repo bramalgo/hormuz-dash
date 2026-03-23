@@ -337,7 +337,7 @@ select.fi option{background:var(--bg3);}
     <div class="chart-wrap">
       <div class="chart-title">Target allocation</div>
       <div class="chart-sub" id="alloc-sub">Auto-updates with phase trigger</div>
-      <div style="position:relative;height:220px;"><canvas id="allocChart"></canvas></div>
+      <div style="position:relative;height:220px;"><canvas id="allocChart" style="display:block;width:100%;height:220px;"></canvas></div>
     </div>
   </div>
 
@@ -417,18 +417,7 @@ select.fi option{background:var(--bg3);}
         2. Message <strong style="color:var(--accent);">@userinfobot</strong> on Telegram — it replies with your user ID (that is your chat ID)<br>
         3. Paste both below, enable alerts, click <em>Send test message</em>
       </div>
-      <div style="background:var(--bg3);border:1px solid var(--border);border-radius:6px;padding:12px;margin-bottom:12px;font-size:11px;color:var(--muted2);line-height:1.7;">
-        <strong style="color:var(--text);font-family:var(--mono);font-size:10px;">LIVE PRICES (via JSONBin):</strong><br>
-        1. Go to <strong style="color:var(--accent);">jsonbin.io</strong> → sign up free → click <em>+ Create Bin</em><br>
-        2. Paste <code style="background:var(--bg);padding:1px 4px;border-radius:3px;">{}</code> as content → Save → copy the <strong style="color:var(--text);">Bin ID</strong><br>
-        3. Go to Account → API Keys → copy your <strong style="color:var(--text);">Master Key</strong><br>
-        4. Add to Railway: <code style="background:var(--bg);padding:1px 4px;border-radius:3px;">JSONBIN_ID</code> and <code style="background:var(--bg);padding:1px 4px;border-radius:3px;">JSONBIN_KEY</code><br>
-        5. Paste the same values below — dashboard fetches live prices from bot every refresh
-      </div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px;">
-        <div class="fg"><div class="fl">JSONBin Bin ID</div><input class="fi" id="jb-id" type="text" placeholder="64abc..." oninput="saveJsonBin()"></div>
-        <div class="fg"><div class="fl">JSONBin Master Key</div><input class="fi" id="jb-key" type="password" placeholder="$2b$10$..." oninput="saveJsonBin()"></div>
-      </div>
+
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px;">
         <div class="fg"><div class="fl">Bot token</div><input class="fi" id="tg-token" type="password" placeholder="123456:ABCdef..." oninput="saveAlertSettings()"></div>
         <div class="fg"><div class="fl">Chat ID</div><input class="fi" id="tg-chatid" type="password" placeholder="e.g. 123456789" oninput="saveAlertSettings()"></div>
@@ -487,7 +476,6 @@ var D = {
     {t:1774051200,v:100.2},{t:1774137600,v:98.32}
   ],
   srcYahoo:'seeded', srcHormuz:'seeded',
-  jsonbinId:'', jsonbinKey:'',
   navOpen:false, navShowVal:false, navTotal:null, navCcy:'£', navMin:5000,
   holdings:{cash:0,tres:0,gold:0,def:0,nrg:0,asia:0,eu:0,em:0,us:0,btc:0},
   overrides:{}
@@ -583,29 +571,41 @@ function renderTicker(){
   function div(){return'<div style="width:1px;height:16px;background:var(--border);flex-shrink:0;margin:0 4px;"></div>';}
 
   var html='';
+  var brent=D.brent!=null?D.brent:BASES.brent;
+  var wti=D.wti!=null?D.wti:BASES.wti;
+  var ttf=D.ttf!=null?D.ttf:BASES.ttf;
+  var gold=D.gold!=null?D.gold:BASES.gold;
+  var tsy=D.tsy!=null?D.tsy:BASES.tsy;
+  var dxy=D.dxy!=null?D.dxy:BASES.dxy;
+  var btc=D.btc!=null?D.btc:BASES.btc;
+  var spx=D.spx!=null?D.spx:BASES.spx;
+  var kospi=D.kospi!=null?D.kospi:BASES.kospi;
+  var nikkei=D.nikkei!=null?D.nikkei:BASES.nikkei;
   // Group 1: Oil & Gas + IEA reserves
-  html+=item(D.brent>=120?'#ef4444':'#f59e0b','Brent $'+D.brent.toFixed(1));
-  html+=item('#f59e0b','WTI $'+D.wti.toFixed(1));
-  html+=item('#f59e0b','TTF €'+D.ttf.toFixed(1));
+  html+=item(brent>=120?'#ef4444':'#f59e0b','Brent $'+brent.toFixed(1));
+  html+=item('#f59e0b','WTI $'+wti.toFixed(1));
+  html+=item('#f59e0b','TTF €'+ttf.toFixed(1));
   html+=item(D.ieaMb>=400?'#f59e0b':'#10b981','IEA '+D.ieaMb+'mb');
   html+=div();
   // Group 2: Macro / rates + BTC after DXY
-  html+=item('#e8eaf0','Gold $'+Math.round(D.gold).toLocaleString());
-  html+=item('#3b82f6','10yr '+D.tsy.toFixed(2)+'%');
-  html+=item('#9ca3af','DXY '+D.dxy.toFixed(1));
-  html+=item('#f97316','<span style="font-size:11px;">₿</span> $'+Math.round(D.btc).toLocaleString());
+  html+=item('#e8eaf0','Gold $'+Math.round(gold).toLocaleString());
+  html+=item('#3b82f6','10yr '+tsy.toFixed(2)+'%');
+  html+=item('#9ca3af','DXY '+dxy.toFixed(1));
+  html+=item('#f97316','<span style="font-size:11px;">₿</span> $'+Math.round(btc).toLocaleString());
   html+=div();
   // Group 3: Equities
-  html+=item(D.spx<BASES.spx?'#ef4444':'#10b981','SPX '+Math.round(D.spx).toLocaleString());
-  html+=item(D.kospi<BASES.kospi?'#ef4444':'#10b981','KOSPI '+Math.round(D.kospi).toLocaleString());
-  html+=item(D.nikkei<BASES.nikkei?'#ef4444':'#10b981','N225 '+Math.round(D.nikkei).toLocaleString());
+  html+=item(spx<BASES.spx?'#ef4444':'#10b981','SPX '+Math.round(spx).toLocaleString());
+  html+=item(kospi<BASES.kospi?'#ef4444':'#10b981','KOSPI '+Math.round(kospi).toLocaleString());
+  html+=item(nikkei<BASES.nikkei?'#ef4444':'#10b981','N225 '+Math.round(nikkei).toLocaleString());
   html+=div();
   // Group 4: Shipping & strait
-  html+=item(D.hormuz>=40?'#10b981':'#ef4444','Hormuz '+D.hormuz+'/day');
-  html+=item(D.carriersOut>=9?'#ef4444':D.carriersOut>=5?'#f59e0b':'#10b981',D.carriersOut+'/'+D.carriersTotal+' carriers');
-  html+=item(D.bdi<BASES.bdi*0.6?'#ef4444':'#f59e0b','BDI '+D.bdi.toLocaleString());
-  html+=item(D.vlcc>300000?'#ef4444':D.vlcc>150000?'#f59e0b':'#9ca3af','VLCC $'+Math.round((D.vlcc||0)/1000)+'k/d');
-  html+=item(D.piWithdrawn?'#ef4444':'#10b981',D.piWithdrawn?'P&I Clubs: cancelled':'P&I Clubs: active');
+  var bdi=D.bdi!=null?D.bdi:BASES.bdi;
+  var vlcc=D.vlcc!=null?D.vlcc:BASES.vlcc;
+  html+=item(D.hormuz!=null?(D.hormuz>=40?'#10b981':'#ef4444'):'#9ca3af','Hormuz '+(D.hormuz!=null?D.hormuz:'—')+'/day');
+  html+=item(D.carriersOut!=null?(D.carriersOut>=9?'#ef4444':D.carriersOut>=5?'#f59e0b':'#10b981'):'#9ca3af',(D.carriersOut!=null?D.carriersOut:'—')+'/'+D.carriersTotal+' carriers');
+  html+=item(bdi<BASES.bdi*0.6?'#ef4444':'#f59e0b','BDI '+bdi.toLocaleString());
+  html+=item(vlcc>300000?'#ef4444':vlcc>150000?'#f59e0b':'#9ca3af','VLCC $'+Math.round(vlcc/1000)+'k/d');
+  html+=item(D.piWithdrawn==null?'#9ca3af':D.piWithdrawn?'#ef4444':'#10b981',D.piWithdrawn==null?'P&I: unknown':D.piWithdrawn?'P&I Clubs: cancelled':'P&I Clubs: active');
   // Group 5: Ceasefire — only show if talks or better (conflict active is redundant with topbar badge)
   if(D.ceasefire!=='none'){
     html+=div();
@@ -682,7 +682,7 @@ var CARD_GROUPS=[
   ]},
   {label:'Macro & Rates', cards:[
     {id:'kc-gold',lbl:'Gold (USD/oz)',val:function(){return D.gold!=null?'$'+Math.round(D.gold).toLocaleString():'—';},col:function(){return'var(--text)';},chg:function(){return fmtChg(D.gold,BASES.gold);},sub:'safe haven benchmark',src:'Yahoo'},
-    {id:'kc-tsy',lbl:'US 10yr yield',val:function(){return D.tsy!=null?D.tsy.toFixed(2)+'%':'—';},col:function(){return D.tsy<4.0?'var(--green)':'var(--text)';},chg:function(){return{t:(D.tsy<4.0?'Below':'Above')+' 4.0% — recession signal',cls:D.tsy<4.0?'down':'up'};},sub:'<4.0% = recession signal',src:'Yahoo'},
+    {id:'kc-tsy',lbl:'US 10yr yield',val:function(){return D.tsy!=null?D.tsy.toFixed(2)+'%':'—';},col:function(){var t=D.tsy!=null?D.tsy:BASES.tsy;return t<4.0?'var(--green)':'var(--text)';},chg:function(){var t=D.tsy!=null?D.tsy:BASES.tsy;return{t:(t<4.0?'Below':'Above')+' 4.0% — recession signal',cls:t<4.0?'down':'up'};},sub:'<4.0% = recession signal',src:'Yahoo'},
     {id:'kc-dxy',lbl:'USD index (DXY)',val:function(){return D.dxy!=null?D.dxy.toFixed(1):'—';},col:function(){return D.dxy>BASES.dxy?'var(--red)':'var(--green)';},chg:function(){return fmtChg(D.dxy,BASES.dxy);},sub:'↑ = EM pressure, risk-off',src:'Yahoo'},
     {id:'kc-iea',lbl:'IEA reserves released',val:function(){return D.ieaMb+'mb';},col:function(){return'var(--amber)';},chg:function(){return{t:'of 400mb authorised · ~20 days cover',cls:'neutral'};},sub:'400mb = IEA max',src:'HormuzTracker'},
   ]},
@@ -738,17 +738,22 @@ function updateCards(){
 
 /* ── SIGNAL BOARD ── */
 function renderSignals(){
+  var brent=D.brent!=null?D.brent:BASES.brent;
+  var ttf=D.ttf!=null?D.ttf:BASES.ttf;
+  var tsy=D.tsy!=null?D.tsy:BASES.tsy;
+  var spx=D.spx!=null?D.spx:BASES.spx;
+  var btc=D.btc!=null?D.btc:BASES.btc;
   var rows=[
-    {n:'Hormuz vessels/day',v:D.hormuz+' vessels/day',trig:'40+ → Phase 1 | 80+ → Phase 2',st:D.hormuz>=80?'green':D.hormuz>=40?'amber':'red',src:'scrape'},
-    {n:'Brent crude (USD/bbl)',v:'$'+D.brent.toFixed(1),trig:'<$80 sustained → Phase 2 | $120+ ×3d → Bear',st:D.brent<80?'green':D.brent<100?'amber':'red',src:'auto'},
-    {n:'EU TTF gas (€/MWh)',v:'€'+D.ttf.toFixed(1),trig:'<€40 → normalising | >€80 → crisis',st:D.ttf<40?'green':D.ttf<65?'amber':'red',src:'scrape'},
-    {n:'P&I Club war-risk cover',v:D.piWithdrawn?'Cancelled — all 13 IG Clubs':'Active',trig:'All clubs cancelled = full crisis. Any reinstatement = Phase 1 trigger.',st:D.piWithdrawn?'red':'green',src:'scrape'},
+    {n:'Hormuz vessels/day',v:(D.hormuz!=null?D.hormuz:'N/A')+' vessels/day',trig:'40+ → Phase 1 | 80+ → Phase 2',st:D.hormuz==null?'amber':D.hormuz>=80?'green':D.hormuz>=40?'amber':'red',src:'scrape'},
+    {n:'Brent crude (USD/bbl)',v:'$'+brent.toFixed(1),trig:'<$80 sustained → Phase 2 | $120+ ×3d → Bear',st:brent<80?'green':brent<100?'amber':'red',src:'auto'},
+    {n:'EU TTF gas (€/MWh)',v:'€'+ttf.toFixed(1),trig:'<€40 → normalising | >€80 → crisis',st:ttf<40?'green':ttf<65?'amber':'red',src:'scrape'},
+    {n:'P&I Club war-risk cover',v:D.piWithdrawn==null?'N/A':D.piWithdrawn?'Cancelled — all 13 IG Clubs':'Active',trig:'All clubs cancelled = full crisis. Any reinstatement = Phase 1 trigger.',st:D.piWithdrawn==null?'amber':D.piWithdrawn?'red':'green',src:'scrape'},
     {n:'Ceasefire status',v:{none:'Active conflict',talks:'Formal talks',announced:'Ceasefire announced',holding:'Ceasefire holding'}[D.ceasefire],trig:'Announced → Phase 2 immediately',st:{none:'red',talks:'amber',announced:'green',holding:'green'}[D.ceasefire],src:'scrape'},
-    {n:'US 10yr yield',v:D.tsy.toFixed(2)+'%',trig:'<4.0% = recession signal',st:D.tsy<4.0?'red':D.tsy<4.3?'amber':'green',src:'auto'},
+    {n:'US 10yr yield',v:tsy.toFixed(2)+'%',trig:'<4.0% = recession signal',st:tsy<4.0?'red':tsy<4.3?'amber':'green',src:'auto'},
     {n:'IEA emergency reserves',v:D.ieaMb+'mb released',trig:'>380mb = critical | rebuild = normalisation',st:D.ieaMb>=400?'red':D.ieaMb>300?'amber':'green',src:'scrape'},
     {n:'Carrier suspensions',v:D.carriersOut+'/'+D.carriersTotal+' lines suspended',trig:'All 9 suspended = full crisis | <5 = improving',st:D.carriersOut>=9?'red':D.carriersOut>=5?'amber':'green',src:'scrape'},
-    {n:'S&P 500',v:D.spx.toFixed(0),trig:'Recovery >5% from lows = risk appetite returning',st:D.spx>BASES.spx?'green':D.spx>5600?'amber':'red',src:'auto'},
-    {n:'Bitcoin (USD)',v:'$'+Math.round(D.btc).toLocaleString(),trig:'Recovery above pre-conflict = broad risk-on (Phase 2 confirm)',st:D.btc>BASES.btc?'green':D.btc>BASES.btc*0.8?'amber':'red',src:'auto'}
+    {n:'S&P 500',v:spx.toFixed(0),trig:'Recovery >5% from lows = risk appetite returning',st:spx>BASES.spx?'green':spx>5600?'amber':'red',src:'auto'},
+    {n:'Bitcoin (USD)',v:'$'+Math.round(btc).toLocaleString(),trig:'Recovery above pre-conflict = broad risk-on (Phase 2 confirm)',st:btc>BASES.btc?'green':btc>BASES.btc*0.8?'amber':'red',src:'auto'}
   ];
   var lbl={red:'RISK',amber:'CAUTION',green:'CLEAR'};
   var srcLbl={auto:'Yahoo',scrape:'HormuzT.'};
@@ -908,17 +913,30 @@ function buildPriceChart(){
   if(typeof Chart==='undefined')return;
   var el=$('priceChart');if(!el)return;
   var isBrent=chartMode==='brent';
-  // Always start from conflict date (28 Feb 2026 = 1772236800)
   var CSTART=1771804800; // 23 Feb 2026 — 5 days before conflict
   var raw=isBrent?D.brentH:D.wtiH;
   var data=raw.filter(function(p){return p.t>=CSTART;});
-  if(!data.length)data=raw; // fallback if filter removes everything
+  if(!data.length)data=raw;
+
+  // Append or update with live price if available
+  var liveVal=isBrent?D.brent:D.wti;
+  if(liveVal!=null){
+    var nowTs=Math.floor(Date.now()/1000);
+    var lastPt=data[data.length-1];
+    if(nowTs-lastPt.t>3600){
+      data=data.concat([{t:nowTs,v:liveVal}]);
+    } else {
+      data=data.slice(0,-1).concat([{t:lastPt.t,v:liveVal}]);
+    }
+  }
+
   var labels=data.map(function(p){var d=new Date(p.t*1000);return(d.getMonth()+1)+'/'+d.getDate();});
   var values=data.map(function(p){return parseFloat(p.v.toFixed(2));});
   var color=isBrent?'#f59e0b':'#ef4444';
   var bgColor=isBrent?'rgba(245,158,11,0.07)':'rgba(239,68,68,0.07)';
+  var lastVal=values.length?values[values.length-1]:0;
   setText('pchart-title',(isBrent?'Brent':'WTI')+' crude — since 28 Feb 2026 (conflict start)');
-  setText('pchart-sub','Last: $'+values[values.length-1].toFixed(1)+' · '+data.length+' data points');
+  setText('pchart-sub','Last: $'+lastVal.toFixed(1)+' · '+data.length+' data points'+(D.srcYahoo==='ok'?' · LIVE':' · seeded 22 Mar'));
 
   var evLines=[];
   GEO.forEach(function(ev,i){
@@ -949,9 +967,18 @@ function buildPriceChart(){
 }
 
 function buildAllocChart(ph){
-  if(typeof Chart==='undefined')return;
+  if(typeof Chart==='undefined'){
+    // Chart.js not loaded yet — retry in 200ms
+    setTimeout(function(){buildAllocChart(ph);},200);
+    return;
+  }
   var el=$('allocChart');if(!el)return;
+  // Ensure canvas has explicit pixel dimensions so Chart.js doesn't collapse it
+  if(!el.style.height)el.style.height='220px';
   var a=PHASES[ph].alloc;
+  var p=PHASES[ph];
+  var sub=$('alloc-sub');
+  if(sub)sub.textContent=p.lbl+' — '+p.name;
   if(allocChart){try{allocChart.destroy();}catch(e){}}
   allocChart=new Chart(el.getContext('2d'),{
     type:'doughnut',
@@ -1078,8 +1105,8 @@ function renderNews(){
 }
 
 /* ── SAVE/LOAD ── */
-function save(){try{localStorage.setItem('h_v6',JSON.stringify({navOpen:D.navOpen,navShowVal:D.navShowVal,navTotal:D.navTotal,navCcy:D.navCcy,navMin:D.navMin,holdings:D.holdings,overrides:D.overrides,jsonbinId:D.jsonbinId,jsonbinKey:D.jsonbinKey}));}catch(e){}}
-function load(){try{localStorage.removeItem('h_v5');var s=localStorage.getItem('h_v6');if(s){var p=JSON.parse(s);['navOpen','navShowVal','navTotal','navCcy','navMin','holdings','overrides','jsonbinId','jsonbinKey'].forEach(function(k){if(p[k]!==undefined)D[k]=p[k];});if(D.overrides)Object.keys(D.overrides).forEach(function(k){if(D.overrides[k])D[k]=D.overrides[k];});}}catch(e){}}
+function save(){try{localStorage.setItem('h_v6',JSON.stringify({navOpen:D.navOpen,navShowVal:D.navShowVal,navTotal:D.navTotal,navCcy:D.navCcy,navMin:D.navMin,holdings:D.holdings,overrides:D.overrides}));}catch(e){}}
+function load(){try{localStorage.removeItem('h_v5');var s=localStorage.getItem('h_v6');if(s){var p=JSON.parse(s);['navOpen','navShowVal','navTotal','navCcy','navMin','holdings','overrides'].forEach(function(k){if(p[k]!==undefined)D[k]=p[k];});if(D.overrides)Object.keys(D.overrides).forEach(function(k){if(D.overrides[k])D[k]=D.overrides[k];});}}catch(e){}}
 
 /* ── MAIN RENDER ── */
 var _lastChartBuild=0;
@@ -1101,19 +1128,30 @@ function render(){
       _lastChartBuild=nowMs;
       _lastPhaseForChart=ph;
     } else if(priceChart) {
-      // Just update the last data point — no rebuild, no flicker
+      // Update the live price point in-place — no full rebuild, no flicker
       var isBrent=chartMode==='brent';
-      var pts=isBrent?D.brentH:D.wtiH;
-      if(pts&&pts.length&&priceChart.data&&priceChart.data.datasets[0]){
-        var newVal=isBrent?D.brent:D.wti;
+      var newVal=isBrent?D.brent:D.wti;
+      if(newVal!=null&&priceChart.data&&priceChart.data.datasets[0]){
         var ds=priceChart.data.datasets[0].data;
         if(ds.length>0){ds[ds.length-1]=parseFloat(newVal.toFixed(2));}
-        priceChart.update('none'); // 'none' = no animation
+        // Also update subtitle
+        setText('pchart-sub','Last: $'+newVal.toFixed(1)+' · '+ds.length+' data points'+(D.srcYahoo==='ok'?' · LIVE':' · seeded 22 Mar'));
+        priceChart.update('none');
       }
     }
   }
   if(D.navOpen&&D.navTotal)recalc();
   setText('stext','22 Mar 2026 snapshot'+(D.srcYahoo==='ok'?' → live data loaded':''));
+}
+
+/* ── UI RENDER TICK — runs every 3 s regardless of fetch throttle ── */
+function renderTick(){
+  render();
+  var ld=$('lupd');
+  if(ld&&_lastRefresh>0&&D.srcYahoo==='ok'){
+    var age=Math.round((Date.now()-_lastRefresh)/1000);
+    ld.textContent=age+'s ago';
+  }
 }
 
 /* ── LIVE FETCH (via Railway bot) ── */
@@ -1189,13 +1227,7 @@ var ALERTS = {
   dailyTimer: null
 };
 
-function saveJsonBin(){
-  D.jsonbinId=($('jb-id')||{}).value||'';
-  D.jsonbinKey=($('jb-key')||{}).value||'';
-  save();
-  var msg=$('alert-msg');
-  if(msg){msg.textContent='JSONBin saved';setTimeout(function(){msg.textContent='';},2000);}
-}
+
 function saveAlertSettings(){
   ALERTS.token=($('tg-token')||{}).value||'';
   ALERTS.chatId=($('tg-chatid')||{}).value||'';
@@ -1229,8 +1261,6 @@ function loadAlertSettings(){
     setTimeout(function(){
       if(ALERTS.token){var t=$('tg-token');if(t)t.value=ALERTS.token;}
       if(ALERTS.chatId){var c=$('tg-chatid');if(c)c.value=ALERTS.chatId;}
-      if(D.jsonbinId){var ji=$('jb-id');if(ji)ji.value=D.jsonbinId;}
-      if(D.jsonbinKey){var jk=$('jb-key');if(jk)jk.value=D.jsonbinKey;}
       ['phase','brent120','ceasefire','pi','hormuz40','daily'].forEach(function(k){
         var el=$('al-'+k);if(el)el.checked=ALERTS.triggers[k]||false;
       });
@@ -1294,11 +1324,12 @@ async function sendTestAlert(){
   }
   alertMsg('alert-msg','Sending…');
   var ph=calcPhase(),p=PHASES[ph];
+  var brent=D.brent!=null?D.brent:BASES.brent;
   var ok=await sendTelegram(
     '🛢 <b>Hormuz Dashboard — Test Alert</b>\n\n'+
     '✅ Connection confirmed\n'+
     'Current phase: <b>'+p.lbl+' — '+p.name+'</b>\n'+
-    'Brent: <b>$'+D.brent.toFixed(1)+'</b> | Hormuz: <b>'+D.hormuz+' vessels/day</b>\n'+
+    'Brent: <b>$'+brent.toFixed(1)+'</b> | Hormuz: <b>'+(D.hormuz!=null?D.hormuz:'N/A')+' vessels/day</b>\n'+
     'Ceasefire: <b>'+({none:'None',talks:'Talks underway',announced:'Announced',holding:'Holding'}[D.ceasefire])+'</b>\n\n'+
     'Alerts active. You will be notified of phase changes and key triggers.'
   );
@@ -1311,20 +1342,27 @@ async function sendDailySummary(){
   var day=D.conflictDay||Math.floor((Date.now()-new Date('2026-02-28').getTime())/86400000);
   var tops=KEYS.filter(function(k){return a[k]>0;}).sort(function(x,y){return a[y]-a[x];});
   var allocStr=tops.map(function(k){return LBLS[k]+' '+a[k]+'%';}).join(' · ');
+  var brent=D.brent!=null?D.brent:BASES.brent;
+  var wti=D.wti!=null?D.wti:BASES.wti;
+  var gold=D.gold!=null?D.gold:BASES.gold;
+  var btc=D.btc!=null?D.btc:BASES.btc;
+  var spx=D.spx!=null?D.spx:BASES.spx;
+  var vlcc=D.vlcc!=null?D.vlcc:BASES.vlcc;
+  var bdi=D.bdi!=null?D.bdi:BASES.bdi;
   var msg=
     '🛢 <b>Hormuz Dashboard — Daily Summary</b>\n'+
     'Day '+day+' of conflict\n\n'+
     '📊 <b>Phase: '+p.lbl+' — '+p.name+'</b>\n'+
     p.rec+'\n\n'+
     '💰 <b>Markets</b>\n'+
-    'Brent: $'+D.brent.toFixed(1)+' (+'+((D.brent-71.32)/71.32*100).toFixed(0)+'% vs pre-conflict)\n'+
-    'WTI: $'+D.wti.toFixed(1)+' | Gold: $'+Math.round(D.gold).toLocaleString()+'\n'+
-    'BTC: $'+Math.round(D.btc).toLocaleString()+' | SPX: '+Math.round(D.spx).toLocaleString()+'\n\n'+
+    'Brent: $'+brent.toFixed(1)+' (+'+((brent-71.32)/71.32*100).toFixed(0)+'% vs pre-conflict)\n'+
+    'WTI: $'+wti.toFixed(1)+' | Gold: $'+Math.round(gold).toLocaleString()+'\n'+
+    'BTC: $'+Math.round(btc).toLocaleString()+' | SPX: '+Math.round(spx).toLocaleString()+'\n\n'+
     '🚢 <b>Strait</b>\n'+
-    'Hormuz: '+D.hormuz+' vessels/day (need 40+ for Phase 1)\n'+
-    'VLCC rate: $'+Math.round(D.vlcc/1000)+'k/day | BDI: '+D.bdi.toLocaleString()+'\n'+
+    'Hormuz: '+(D.hormuz!=null?D.hormuz:'N/A')+' vessels/day (need 40+ for Phase 1)\n'+
+    'VLCC rate: $'+Math.round(vlcc/1000)+'k/day | BDI: '+bdi.toLocaleString()+'\n'+
     'Carriers: '+D.carriersOut+'/'+D.carriersTotal+' suspended\n'+
-    'P&I: '+(D.piWithdrawn?'Cancelled (all 13 IG clubs)':'Active')+'\n\n'+
+    'P&I: '+(D.piWithdrawn==null?'Unknown':D.piWithdrawn?'Cancelled (all 13 IG clubs)':'Active')+'\n\n'+
     '🎯 <b>Target allocation</b>\n'+
     allocStr;
   var ok=await sendTelegram(msg);
@@ -1347,8 +1385,8 @@ function scheduleDailyAlert(){
 
 function checkAlertTriggers(){
   if(!ALERTS.enabled||!ALERTS.token||!ALERTS.chatId)return;
-
   var ph=calcPhase();
+  var brent=D.brent!=null?D.brent:BASES.brent;
 
   // Phase change
   if(ALERTS.triggers.phase&&ALERTS.lastPhase!==null&&ph!==ALERTS.lastPhase){
@@ -1356,7 +1394,7 @@ function checkAlertTriggers(){
     sendTelegram(
       '⚡ <b>PHASE CHANGE: '+old.lbl+' → '+now.lbl+'</b>\n\n'+
       '<b>'+now.name+'</b>\n'+now.rec+'\n\n'+
-      'Brent: $'+D.brent.toFixed(1)+' | Hormuz: '+D.hormuz+' vessels/day\n'+
+      'Brent: $'+brent.toFixed(1)+' | Hormuz: '+(D.hormuz!=null?D.hormuz:'N/A')+' vessels/day\n'+
       'Ceasefire: '+D.ceasefire+'\n\n'+
       '🎯 <b>Action required within 24-48h</b>'
     );
@@ -1369,7 +1407,7 @@ function checkAlertTriggers(){
       sendTelegram(
         '🕊 <b>CEASEFIRE SIGNAL DETECTED</b>\n\n'+
         'Status: <b>'+{talks:'Formal talks underway',announced:'Ceasefire announced',holding:'Ceasefire holding'}[D.ceasefire]+'</b>\n\n'+
-        'Brent: $'+D.brent.toFixed(1)+' | Hormuz: '+D.hormuz+' vessels/day\n\n'+
+        'Brent: $'+brent.toFixed(1)+' | Hormuz: '+(D.hormuz!=null?D.hormuz:'N/A')+' vessels/day\n\n'+
         '⚡ Phase 2 deployment window may open — monitor closely'
       );
     }
@@ -1377,11 +1415,11 @@ function checkAlertTriggers(){
   ALERTS.lastCeasefire=D.ceasefire;
 
   // Brent $120+
-  var brent120=D.brent>=120;
+  var brent120=brent>=120;
   if(ALERTS.triggers.brent120&&brent120&&!ALERTS.lastBrent120){
     sendTelegram(
       '🔴 <b>BRENT ABOVE $120 — BEAR CASE RISK</b>\n\n'+
-      'Brent: <b>$'+D.brent.toFixed(1)+'</b>\n'+
+      'Brent: <b>$'+brent.toFixed(1)+'</b>\n'+
       'If sustained 3+ days → Bear case allocation\n\n'+
       '⚠ Consider reverting to Phase 0 if in Phase 1'
     );
@@ -1389,24 +1427,24 @@ function checkAlertTriggers(){
   ALERTS.lastBrent120=brent120;
 
   // P&I reinstatement
-  if(ALERTS.triggers.pi&&!D.piWithdrawn&&ALERTS.lastPiWithdrawn){
+  if(ALERTS.triggers.pi&&D.piWithdrawn===false&&ALERTS.lastPiWithdrawn){
     sendTelegram(
       '✅ <b>P&I CLUB COVER REINSTATED</b>\n\n'+
       'At least one IG P&I Club has reinstated war-risk cover.\n'+
       'This is a Phase 1 trigger.\n\n'+
-      'Hormuz: '+D.hormuz+' vessels/day | Brent: $'+D.brent.toFixed(1)+'\n\n'+
+      'Hormuz: '+(D.hormuz!=null?D.hormuz:'N/A')+' vessels/day | Brent: $'+brent.toFixed(1)+'\n\n'+
       '⚡ Review Phase 1 deployment'
     );
   }
   ALERTS.lastPiWithdrawn=D.piWithdrawn;
 
   // Hormuz 40+ vessels
-  var h40=D.hormuz>=40;
+  var h40=D.hormuz!=null&&D.hormuz>=40;
   if(ALERTS.triggers.hormuz40&&h40&&!ALERTS.lastHormuz40){
     sendTelegram(
       '🚢 <b>HORMUZ THRESHOLD: '+D.hormuz+' VESSELS/DAY</b>\n\n'+
       'Crossed the 40 vessel/day Phase 1 trigger.\n'+
-      'Brent: $'+D.brent.toFixed(1)+'\n\n'+
+      'Brent: $'+brent.toFixed(1)+'\n\n'+
       '⚡ Phase 1 deployment may be appropriate — verify P&I status'
     );
   }
@@ -1438,21 +1476,26 @@ async function pollBotCommands(){
           var ph=calcPhase(),p=PHASES[ph];
           await sendTelegram('📊 <b>'+p.lbl+' — '+p.name+'</b>\n\n'+p.rec+'\n\n'+p.sub);
         } else if(cmd==='/brent'){
+          var b=D.brent!=null?D.brent:BASES.brent;
+          var w=D.wti!=null?D.wti:BASES.wti;
+          var tf=D.ttf!=null?D.ttf:BASES.ttf;
           await sendTelegram(
             '🛢 <b>Oil prices</b>\n'+
-            'Brent: <b>$'+D.brent.toFixed(1)+'</b> (+'+((D.brent-71.32)/71.32*100).toFixed(0)+'% vs pre-conflict)\n'+
-            'WTI: <b>$'+D.wti.toFixed(1)+'</b>\n'+
-            'TTF gas: <b>€'+D.ttf.toFixed(1)+'</b>/MWh\n'+
+            'Brent: <b>$'+b.toFixed(1)+'</b> (+'+((b-71.32)/71.32*100).toFixed(0)+'% vs pre-conflict)\n'+
+            'WTI: <b>$'+w.toFixed(1)+'</b>\n'+
+            'TTF gas: <b>€'+tf.toFixed(1)+'</b>/MWh\n'+
             'IEA reserves: <b>'+D.ieaMb+'mb</b> released'
           );
         } else if(cmd==='/strait'){
+          var vl=D.vlcc!=null?D.vlcc:BASES.vlcc;
+          var bd=D.bdi!=null?D.bdi:BASES.bdi;
           await sendTelegram(
             '🚢 <b>Strait of Hormuz</b>\n'+
-            'Vessels: <b>'+D.hormuz+'/day</b> (need 40+ for Phase 1)\n'+
+            'Vessels: <b>'+(D.hormuz!=null?D.hormuz:'N/A')+'/day</b> (need 40+ for Phase 1)\n'+
             'Carriers: <b>'+D.carriersOut+'/'+D.carriersTotal+' suspended</b>\n'+
-            'VLCC rate: <b>$'+Math.round(D.vlcc/1000)+'k/day</b>\n'+
-            'BDI: <b>'+D.bdi.toLocaleString()+'</b>\n'+
-            'P&I: <b>'+(D.piWithdrawn?'Cancelled (all 13 IG clubs)':'Active')+'</b>\n'+
+            'VLCC rate: <b>$'+Math.round(vl/1000)+'k/day</b>\n'+
+            'BDI: <b>'+bd.toLocaleString()+'</b>\n'+
+            'P&I: <b>'+(D.piWithdrawn==null?'Unknown':D.piWithdrawn?'Cancelled (all 13 IG clubs)':'Active')+'</b>\n'+
             'Ceasefire: <b>'+({none:'None',talks:'Talks',announced:'Announced',holding:'Holding'}[D.ceasefire])+'</b>'
           );
         } else if(cmd==='/help'){
@@ -1521,8 +1564,9 @@ if(ALERTS.enabled)startBotPolling();
   };
   s.onerror=function(){};
   document.head.appendChild(s);
-  /* auto-refresh every 15 min if in a real browser */
-  setInterval(doRefresh,3*1000);
+  /* render tick every 3s (UI always live) — fetch throttled to 30s */
+  setInterval(renderTick, 3000);
+  setInterval(doRefresh, 30000);
   // Refresh when tab becomes visible again (iOS Safari backgrounding fix)
   document.addEventListener('visibilitychange',function(){
     if(document.visibilityState==='visible')doRefresh();
