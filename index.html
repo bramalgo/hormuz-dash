@@ -1116,63 +1116,7 @@ function render(){
   setText('stext','22 Mar 2026 snapshot'+(D.srcYahoo==='ok'?' → live data loaded':''));
 }
 
-/* ── LIVE FETCH ── */
-var PROXIES=['https://api.allorigins.win/get?url=','https://corsproxy.io/?','https://api.codetabs.com/v1/proxy?quest='];
-var PROXY_JSON=[true,false,false];
-
-async function safeProxy(url){
-  try{var r=await fetch(url,{mode:'cors',cache:'no-store'});if(r.ok){var t=await r.text();if(t&&t.length>100)return t;}}catch(e){}
-  for(var i=0;i<PROXIES.length;i++){
-    try{var pr=await fetch(PROXIES[i]+encodeURIComponent(url),{cache:'no-store'});if(!pr.ok)continue;
-    var txt=PROXY_JSON[i]?(await pr.json()).contents:await pr.text();
-    if(txt&&txt.length>100)return txt;}catch(e){}
-  }
-  return null;
-}
-
-async function fetchYahoo(sym,range){
-  var urls=['https://query1.finance.yahoo.com/v8/finance/chart/'+sym+'?interval=1d&range='+(range||'5d'),
-    'https://query2.finance.yahoo.com/v8/finance/chart/'+sym+'?interval=1d&range='+(range||'5d')];
-  for(var i=0;i<urls.length;i++){
-    var txt=await safeProxy(urls[i]);
-    if(!txt)continue;
-    try{var p=JSON.parse(txt).chart.result[0];var cl=p.indicators.quote[0].close;var ts=p.timestamp;
-      var d=cl.map(function(c,j){return c!==null?{t:ts[j],v:c}:null;}).filter(Boolean);
-      if(d.length)return d;}catch(e){}
-  }
-  return null;
-}
-
-async function fetchHormuz(){
-  var html=await safeProxy('https://www.hormuztracker.com/');
-  if(!html)return false;
-  try{
-    // Vessels — broad patterns
-    var vm=html.match(/(\d+)\s*vessels?\s*(?:detected\s*)?today/i)
-      ||html.match(/~\s*(\d+)\s*(?:ships?|vessels?)/i)
-      ||html.match(/(\d+)\s*ships?\s*(?:detected|transiting|passed)/i)
-      ||html.match(/vessel[^<]{0,30}?(\d+)/i);
-    if(vm){var c=parseInt(vm[1],10);if(c>0&&c<500)D.hormuz=c;}
-    // TTF — only use scraped if Yahoo TTF failed
-    var tm=html.match(/TTF[^\d]{0,20}([\d.]+)/i)||html.match(/€\s*([\d.]+)\s*\/\s*MWh/i);
-    if(tm){var tv=parseFloat(tm[1]);if(tv>5&&tv<500&&!D._ttfFromYahoo)D.ttf=tv;}
-    D.piWithdrawn=/Withdrawn/i.test(html)&&/P.{0,3}I/i.test(html);
-    D.cancelledClubs=(html.match(/Cancelled/gi)||[]).length;
-    var wm=html.match(/[→]\s*([\d.]+)%\s*[–\-]\s*([\d.]+)/i);
-    if(wm)D.warRiskRange=wm[1]+'–'+wm[2]+'%';
-    var cm=html.match(/(\d+)\/(\d+)\s*Major Lines Suspended/i);
-    if(cm){D.carriersOut=parseInt(cm[1],10);D.carriersTotal=parseInt(cm[2],10);}
-    var dm=html.match(/Day\s+(\d+)/i);if(dm)D.conflictDay=parseInt(dm[1],10);
-    if(html.match(/400M\s*barrel|400\s*million\s*barrel/i))D.ieaMb=400;
-    var lc=html.toLowerCase();
-    if(lc.includes('ceasefire holding'))D.ceasefire='holding';
-    else if(lc.includes('ceasefire announced'))D.ceasefire='announced';
-    else if(lc.includes('ceasefire talks')||lc.includes('peace talks'))D.ceasefire='talks';
-    else D.ceasefire='none';
-    D.srcHormuz='ok';return true;
-  }catch(e){D.srcHormuz='error';return false;}
-}
-
+/* ── LIVE FETCH (via Railway bot) ── */
 var _lastRefresh=0;
 async function doRefresh(){
   var now=Date.now();
@@ -1180,10 +1124,15 @@ async function doRefresh(){
   _lastRefresh=now;
   var rb=$('rbtn');if(rb)rb.textContent='↻ Loading…';
   // ── Fetch directly from Railway bot (fast, no intermediary) ──
-  var botUrl=D.botUrl||'https://worker-production-7fe4.up.railway.app';
-  console.log('Fetching from:',botUrl+'/health');
+  var botUrl='https://worker-production-7fe4.up.railway.app';
   try{
-    var r=await fetch(botUrl+'/health',{cache:'no-store',mode:'cors',credentials:'omit'});
+    var r=await fetch(botUrl+'/health',{
+      method:'GET',
+      cache:'no-store',
+      mode:'cors',
+      credentials:'omit',
+      headers:{'Accept':'application/json'}
+    });
     if(r.ok){
       var p=await r.json();
       if(p.brent)   D.brent=p.brent;
