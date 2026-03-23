@@ -1082,6 +1082,8 @@ function save(){try{localStorage.setItem('h_v6',JSON.stringify({navOpen:D.navOpe
 function load(){try{localStorage.removeItem('h_v5');var s=localStorage.getItem('h_v6');if(s){var p=JSON.parse(s);['navOpen','navShowVal','navTotal','navCcy','navMin','holdings','overrides','jsonbinId','jsonbinKey'].forEach(function(k){if(p[k]!==undefined)D[k]=p[k];});if(D.overrides)Object.keys(D.overrides).forEach(function(k){if(D.overrides[k])D[k]=D.overrides[k];});}}catch(e){}}
 
 /* ── MAIN RENDER ── */
+var _lastChartBuild=0;
+var _lastPhaseForChart=-1;
 function render(){
   var ph=renderPhase();
   renderAllocBars(ph);
@@ -1090,8 +1092,25 @@ function render(){
   renderSignals();
   renderNews();
   if(typeof Chart!=='undefined'){
-    buildPriceChart();
-    buildAllocChart(ph);
+    var nowMs=Date.now();
+    var phaseChanged=ph!==_lastPhaseForChart;
+    if(_lastChartBuild===0||phaseChanged||nowMs-_lastChartBuild>3600000){
+      // Full rebuild — first load, phase change, or hourly
+      buildPriceChart();
+      buildAllocChart(ph);
+      _lastChartBuild=nowMs;
+      _lastPhaseForChart=ph;
+    } else if(priceChart) {
+      // Just update the last data point — no rebuild, no flicker
+      var isBrent=chartMode==='brent';
+      var pts=isBrent?D.brentH:D.wtiH;
+      if(pts&&pts.length&&priceChart.data&&priceChart.data.datasets[0]){
+        var newVal=isBrent?D.brent:D.wti;
+        var ds=priceChart.data.datasets[0].data;
+        if(ds.length>0){ds[ds.length-1]=parseFloat(newVal.toFixed(2));}
+        priceChart.update('none'); // 'none' = no animation
+      }
+    }
   }
   if(D.navOpen&&D.navTotal)recalc();
   setText('stext','22 Mar 2026 snapshot'+(D.srcYahoo==='ok'?' → live data loaded':''));
@@ -1160,47 +1179,40 @@ async function doRefresh(){
   if(now-_lastRefresh<30000&&_lastRefresh>0){console.log('Refresh throttled');return;}
   _lastRefresh=now;
   var rb=$('rbtn');if(rb)rb.textContent='↻ Loading…';
-  var jbId=D.jsonbinId||'';
-  var jbKey=D.jsonbinKey||'';
-  // ── Try JSONBin first (server-side prices, always fresh) ──
-  if(jbId&&jbKey){
-    try{
-      var r=await fetch('https://api.jsonbin.io/v3/b/'+jbId+'/latest',{
-        headers:{'X-Master-Key':jbKey},cache:'no-store'
-      });
-      if(r.ok){
-        var j=await r.json();
-        var p=j.record;
-        var age=Math.round((Date.now()/1000-p.ts)/60);
-        console.log('JSONBin: got prices, age '+age+'min');
-        if(p.brent)  D.brent=p.brent;
-        if(p.wti)    D.wti=p.wti;
-        if(p.gold)   D.gold=p.gold;
-        if(p.spx)    D.spx=p.spx;
-        if(p.tsy)    D.tsy=p.tsy;
-        if(p.btc)    D.btc=p.btc;
-        if(p.dxy)    D.dxy=p.dxy;
-        if(p.kospi)  D.kospi=p.kospi;
-        if(p.nikkei) D.nikkei=p.nikkei;
-        if(p.bdi)    D.bdi=p.bdi;
-        if(p.ttf)    D.ttf=p.ttf;
-        if(p.vlcc)   D.vlcc=p.vlcc;
-        if(p.hormuz!==undefined)  D.hormuz=p.hormuz;
-        if(p.carriersOut!==undefined) D.carriersOut=p.carriersOut;
-        if(p.carriersTotal!==undefined) D.carriersTotal=p.carriersTotal;
-        if(p.piWithdrawn!==undefined) D.piWithdrawn=p.piWithdrawn;
-        if(p.ceasefire) D.ceasefire=p.ceasefire;
-        if(p.conflictDay) D.conflictDay=p.conflictDay;
-        if(p.ieaMb) D.ieaMb=p.ieaMb;
-        D.srcYahoo='ok'; D.srcHormuz='ok';
-        setText('lupd','Bot: '+age+'min ago');
-        save();render();checkAlertTriggers();
-        if(rb)rb.textContent='↻ Refresh';
-        return;
-      }
-    }catch(e){console.log('JSONBin failed, falling back to direct fetch:',e);}
-  }
-  // ── Fallback: direct Yahoo fetch (may fail due to CORS) ──
+  // ── Fetch directly from Railway bot (fast, no intermediary) ──
+  var botUrl=D.botUrl||'https://worker-production-7fe4.up.railway.app';
+  try{
+    var r=await fetch(botUrl+'/health',{cache:'no-store'});
+    if(r.ok){
+      var p=await r.json();
+      if(p.brent)   D.brent=p.brent;
+      if(p.wti)     D.wti=p.wti;
+      if(p.gold)    D.gold=p.gold;
+      if(p.spx)     D.spx=p.spx;
+      if(p.tsy)     D.tsy=p.tsy;
+      if(p.btc)     D.btc=p.btc;
+      if(p.dxy)     D.dxy=p.dxy;
+      if(p.kospi)   D.kospi=p.kospi;
+      if(p.nikkei)  D.nikkei=p.nikkei;
+      if(p.bdi)     D.bdi=p.bdi;
+      if(p.ttf)     D.ttf=p.ttf;
+      if(p.vlcc)    D.vlcc=p.vlcc;
+      if(p.hormuz!==undefined)       D.hormuz=p.hormuz;
+      if(p.carriersOut!==undefined)  D.carriersOut=p.carriersOut;
+      if(p.carriersTotal!==undefined)D.carriersTotal=p.carriersTotal;
+      if(p.piWithdrawn!==undefined)  D.piWithdrawn=p.piWithdrawn;
+      if(p.ceasefire)   D.ceasefire=p.ceasefire;
+      if(p.conflictDay) D.conflictDay=p.conflictDay;
+      if(p.ieaMb)       D.ieaMb=p.ieaMb;
+      D.srcYahoo='ok'; D.srcHormuz='ok';
+      var age=p.ts?Math.round((Date.now()/1000-p.ts))+'s ago':'live';
+      setText('lupd',age);
+      save();render();checkAlertTriggers();
+      if(rb)rb.textContent='↻ Refresh';
+      return;
+    }
+  }catch(e){console.log('Bot fetch failed:',e);}
+  // ── Fallback ──
   try{
     var [bD,wD,gD,sD,tD,btcD,dxyD,kD,nD,bdiD,ttfD]=await Promise.all([
       fetchYahoo('BZ=F','30d'),fetchYahoo('CL=F','30d'),fetchYahoo('GC=F','5d'),
@@ -1604,7 +1616,7 @@ if(ALERTS.enabled)startBotPolling();
   s.onerror=function(){};
   document.head.appendChild(s);
   /* auto-refresh every 15 min if in a real browser */
-  setInterval(doRefresh,10*1000);
+  setInterval(doRefresh,3*1000);
   // Refresh when tab becomes visible again (iOS Safari backgrounding fix)
   document.addEventListener('visibilitychange',function(){
     if(document.visibilityState==='visible')doRefresh();
