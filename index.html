@@ -151,7 +151,7 @@ select.fi option{background:var(--bg3);}
   /* Fix sticky context — remove overflow from elements that break it */
   .sidebar{overflow:visible;}
   .main{overflow:visible;}
-  body{overflow-x:hidden;}
+  html{overflow-x:hidden;}
   /* Topbar — 2-row on mobile */
   .topbar{padding:4px 10px;height:72px;flex-direction:column;align-items:stretch;justify-content:center;gap:4px;}
   .topbar>div:first-child{display:flex;align-items:center;justify-content:space-between;width:100%;}
@@ -1069,8 +1069,8 @@ function renderNews(){
 }
 
 /* ── SAVE/LOAD ── */
-function save(){try{localStorage.setItem('h_v5',JSON.stringify({navOpen:D.navOpen,navShowVal:D.navShowVal,navTotal:D.navTotal,navCcy:D.navCcy,navMin:D.navMin,holdings:D.holdings,overrides:D.overrides,jsonbinId:D.jsonbinId,jsonbinKey:D.jsonbinKey}));}catch(e){}}
-function load(){try{var s=localStorage.getItem('h_v5');if(s){var p=JSON.parse(s);['navOpen','navShowVal','navTotal','navCcy','navMin','holdings','overrides','jsonbinId','jsonbinKey'].forEach(function(k){if(p[k]!==undefined)D[k]=p[k];});if(D.overrides)Object.keys(D.overrides).forEach(function(k){if(D.overrides[k])D[k]=D.overrides[k];});}}catch(e){}}
+function save(){try{localStorage.setItem('h_v6',JSON.stringify({navOpen:D.navOpen,navShowVal:D.navShowVal,navTotal:D.navTotal,navCcy:D.navCcy,navMin:D.navMin,holdings:D.holdings,overrides:D.overrides,jsonbinId:D.jsonbinId,jsonbinKey:D.jsonbinKey}));}catch(e){}}
+function load(){try{localStorage.removeItem('h_v5');var s=localStorage.getItem('h_v6');if(s){var p=JSON.parse(s);['navOpen','navShowVal','navTotal','navCcy','navMin','holdings','overrides','jsonbinId','jsonbinKey'].forEach(function(k){if(p[k]!==undefined)D[k]=p[k];});if(D.overrides)Object.keys(D.overrides).forEach(function(k){if(D.overrides[k])D[k]=D.overrides[k];});}}catch(e){}}
 
 /* ── MAIN RENDER ── */
 function render(){
@@ -1145,7 +1145,11 @@ async function fetchHormuz(){
   }catch(e){D.srcHormuz='error';return false;}
 }
 
+var _lastRefresh=0;
 async function doRefresh(){
+  var now=Date.now();
+  if(now-_lastRefresh<30000&&_lastRefresh>0){console.log('Refresh throttled');return;}
+  _lastRefresh=now;
   var rb=$('rbtn');if(rb)rb.textContent='↻ Loading…';
   var jbId=D.jsonbinId||'';
   var jbKey=D.jsonbinKey||'';
@@ -1583,8 +1587,7 @@ if(ALERTS.enabled)startBotPolling();
   window.addEventListener('pageshow',function(e){
     if(e.persisted)doRefresh();
   });
-  // Refresh on window focus (desktop tab switching)
-  window.addEventListener('focus',doRefresh);
+
 })();
 </script>
 </body>
