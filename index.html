@@ -1181,8 +1181,9 @@ async function doRefresh(){
   var rb=$('rbtn');if(rb)rb.textContent='↻ Loading…';
   // ── Fetch directly from Railway bot (fast, no intermediary) ──
   var botUrl=D.botUrl||'https://worker-production-7fe4.up.railway.app';
+  console.log('Fetching from:',botUrl+'/health');
   try{
-    var r=await fetch(botUrl+'/health',{cache:'no-store'});
+    var r=await fetch(botUrl+'/health',{cache:'no-store',mode:'cors',credentials:'omit'});
     if(r.ok){
       var p=await r.json();
       if(p.brent)   D.brent=p.brent;
@@ -1211,54 +1212,10 @@ async function doRefresh(){
       if(rb)rb.textContent='↻ Refresh';
       return;
     }
-  }catch(e){console.log('Bot fetch failed:',e);}
-  // ── Fallback ──
-  try{
-    var [bD,wD,gD,sD,tD,btcD,dxyD,kD,nD,bdiD,ttfD]=await Promise.all([
-      fetchYahoo('BZ=F','30d'),fetchYahoo('CL=F','30d'),fetchYahoo('GC=F','5d'),
-      fetchYahoo('%5EGSPC','5d'),fetchYahoo('%5ETNX','5d'),fetchYahoo('BTC-USD','5d'),
-      fetchYahoo('DX-Y.NYB','5d'),fetchYahoo('%5EKS11','5d'),fetchYahoo('%5EN225','5d'),
-      fetchYahoo('%5EBDI','5d'),fetchYahoo('TTF=F','5d')
-    ]);
-    function last(a){return a&&a.length?a[a.length-1].v:null;}
-    var fetched=[];
-    if(bD&&bD.length){
-      D.brent=last(bD);
-      // Merge: keep seeded history from conflict start (28 Feb), append live data after
-      var CONFLICT_T=1771804800; // 23 Feb — 5 days before conflict
-      var seedPts=D.brentH.filter(function(p){return p.t<=1772236800+86400*3;}); // seed up to ~3 Mar
-      var livePts=bD.filter(function(p){return p.t>seedPts[seedPts.length-1].t;});
-      D.brentH=seedPts.concat(livePts);
-      D.srcYahoo='ok';fetched.push('Brent');
-    }
-    if(wD&&wD.length){
-      D.wti=last(wD);
-      var CONFLICT_T=1771804800;
-      var seedPtsW=D.wtiH.filter(function(p){return p.t<=1772236800+86400*3;});
-      var livePtsW=wD.filter(function(p){return p.t>seedPtsW[seedPtsW.length-1].t;});
-      D.wtiH=seedPtsW.concat(livePtsW);
-      fetched.push('WTI');
-    }
-    if(gD){D.gold=last(gD);fetched.push('Gold');}
-    if(sD){D.spx=last(sD);fetched.push('SPX');}
-    if(tD){D.tsy=last(tD);fetched.push('TSY');}
-    if(btcD){D.btc=last(btcD);fetched.push('BTC:$'+Math.round(last(btcD)).toLocaleString());}
-    if(dxyD){D.dxy=last(dxyD);fetched.push('DXY');}
-    if(kD){D.kospi=last(kD);fetched.push('KOSPI');}
-    if(nD){D.nikkei=last(nD);fetched.push('N225');}
-    if(bdiD){D.bdi=last(bdiD);fetched.push('BDI');}
-    if(ttfD){D.ttf=last(ttfD);D._ttfFromYahoo=true;fetched.push('TTF');}
-    console.log('Yahoo fetched:',fetched.join(', '));
-    console.log('Failed:',[!bD&&'Brent',!wD&&'WTI',!gD&&'Gold',!sD&&'SPX',!tD&&'TSY',!btcD&&'BTC',!ttfD&&'TTF'].filter(Boolean).join(', '));
-    // Render immediately with Yahoo data — don't wait for HormuzTracker
-    save();render();checkAlertTriggers();
-    setText('lupd','Updated '+new Date().toLocaleTimeString());
-  }catch(e){console.error('doRefresh Yahoo error:',e);}
-  // HormuzTracker fetch separately — failure won't block Yahoo render
-  try{
-    await fetchHormuz();
-    save();render();
-  }catch(e){console.error('doRefresh Hormuz error:',e);}
+  }catch(e){
+    console.log('Bot fetch failed:',e);
+    setText('lupd','Connection error');
+  }
   if(rb)rb.textContent='↻ Refresh';
 }
 
