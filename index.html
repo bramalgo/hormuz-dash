@@ -471,6 +471,7 @@ var D = {
   hormuz:5, ttf:60.20, piWithdrawn:true, cancelledClubs:6, warRiskRange:'0.5–2.0',
   vlcc:285000, carriersOut:9, carriersTotal:9, conflictDay:22, ieaMb:400, ceasefire:'none',
   brentH:[
+    {t:1771804800,v:71.32},{t:1771891200,v:71.45},{t:1771977600,v:71.28},{t:1772064000,v:71.55},{t:1772150400,v:71.38},
     {t:1772236800,v:71.32},{t:1772409600,v:77.24},{t:1772496000,v:82.1},{t:1772582400,v:85.4},
     {t:1772668800,v:89.2},{t:1772755200,v:93.5},{t:1773014400,v:98.8},{t:1773100800,v:103.2},
     {t:1773187200,v:108.5},{t:1773273600,v:119.5},{t:1773360000,v:115.3},{t:1773619200,v:110.8},
@@ -478,6 +479,7 @@ var D = {
     {t:1774051200,v:107.4},{t:1774137600,v:112.19}
   ],
   wtiH:[
+    {t:1771804800,v:67.8},{t:1771891200,v:67.92},{t:1771977600,v:67.71},{t:1772064000,v:67.88},{t:1772150400,v:67.75},
     {t:1772236800,v:67.8},{t:1772409600,v:72.5},{t:1772496000,v:77.1},{t:1772582400,v:80.2},
     {t:1772668800,v:84.1},{t:1772755200,v:88.0},{t:1773014400,v:92.5},{t:1773100800,v:96.8},
     {t:1773187200,v:101.2},{t:1773273600,v:112.3},{t:1773360000,v:108.5},{t:1773619200,v:104.2},
@@ -907,7 +909,7 @@ function buildPriceChart(){
   var el=$('priceChart');if(!el)return;
   var isBrent=chartMode==='brent';
   // Always start from conflict date (28 Feb 2026 = 1772236800)
-  var CSTART=1772236800;
+  var CSTART=1771804800; // 23 Feb 2026 — 5 days before conflict
   var raw=isBrent?D.brentH:D.wtiH;
   var data=raw.filter(function(p){return p.t>=CSTART;});
   if(!data.length)data=raw; // fallback if filter removes everything
@@ -1211,16 +1213,16 @@ async function doRefresh(){
     if(bD&&bD.length){
       D.brent=last(bD);
       // Merge: keep seeded history from conflict start (28 Feb), append live data after
-      var CONFLICT_T=1772236800; // 28 Feb 2026 00:00 UTC
-      var seedPts=D.brentH.filter(function(p){return p.t<=CONFLICT_T+86400*3;}); // first 3 days seeded
+      var CONFLICT_T=1771804800; // 23 Feb — 5 days before conflict
+      var seedPts=D.brentH.filter(function(p){return p.t<=1772236800+86400*3;}); // seed up to ~3 Mar
       var livePts=bD.filter(function(p){return p.t>seedPts[seedPts.length-1].t;});
       D.brentH=seedPts.concat(livePts);
       D.srcYahoo='ok';fetched.push('Brent');
     }
     if(wD&&wD.length){
       D.wti=last(wD);
-      var CONFLICT_T=1772236800;
-      var seedPtsW=D.wtiH.filter(function(p){return p.t<=CONFLICT_T+86400*3;});
+      var CONFLICT_T=1771804800;
+      var seedPtsW=D.wtiH.filter(function(p){return p.t<=1772236800+86400*3;});
       var livePtsW=wD.filter(function(p){return p.t>seedPtsW[seedPtsW.length-1].t;});
       D.wtiH=seedPtsW.concat(livePtsW);
       fetched.push('WTI');
