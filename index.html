@@ -906,7 +906,11 @@ function buildPriceChart(){
   if(typeof Chart==='undefined')return;
   var el=$('priceChart');if(!el)return;
   var isBrent=chartMode==='brent';
-  var data=isBrent?D.brentH:D.wtiH;
+  // Always start from conflict date (28 Feb 2026 = 1772236800)
+  var CSTART=1772236800;
+  var raw=isBrent?D.brentH:D.wtiH;
+  var data=raw.filter(function(p){return p.t>=CSTART;});
+  if(!data.length)data=raw; // fallback if filter removes everything
   var labels=data.map(function(p){var d=new Date(p.t*1000);return(d.getMonth()+1)+'/'+d.getDate();});
   var values=data.map(function(p){return parseFloat(p.v.toFixed(2));});
   var color=isBrent?'#f59e0b':'#ef4444';
@@ -929,6 +933,7 @@ function buildPriceChart(){
     plugins:[eventsPlugin],
     options:{responsive:true,maintainAspectRatio:false,
       plugins:{legend:{display:false}},
+      layout:{padding:{left:8,right:8,top:4}},
       scales:{
         x:{grid:{color:'rgba(255,255,255,0.04)'},ticks:{color:'#6b7280',font:{size:9},maxTicksLimit:10}},
         y:{grid:{color:'rgba(255,255,255,0.04)'},ticks:{color:'#6b7280',font:{size:9},callback:function(v){return'$'+v.toFixed(0);}}}
