@@ -920,10 +920,12 @@ function buildPriceChart(){
 
   var evLines=[];
   GEO.forEach(function(ev,i){
-    var evTs=new Date(ev.date).getTime()/1000;
+    // Parse date as UTC noon to avoid timezone boundary issues
+    var parts=ev.date.split('-');
+    var evTs=Date.UTC(parseInt(parts[0]),parseInt(parts[1])-1,parseInt(parts[2]),12,0,0)/1000;
     var closest=-1,minDiff=Infinity;
     data.forEach(function(p,idx){var d=Math.abs(p.t-evTs);if(d<minDiff){minDiff=d;closest=idx;}});
-    if(closest>=0&&minDiff<4*86400)evLines.push({idx:closest,lbl:ev.lbl,c:ev.c,alt:i%2===0});
+    if(closest>=0&&minDiff<5*86400)evLines.push({idx:closest,lbl:ev.lbl,c:ev.c,alt:i%2===0});
   });
 
   if(priceChart){try{priceChart.destroy();}catch(e){}}
@@ -1565,6 +1567,8 @@ buildSecurities();
 buildPlaybook();
 buildOverrides();
 render();
+// Auto-fetch live data on open (after a short delay to let page settle)
+setTimeout(doRefresh, 800);
 // Set alert baseline so first refresh doesn't fire spurious alerts
 ALERTS.lastPhase=calcPhase();
 ALERTS.lastCeasefire=D.ceasefire;
