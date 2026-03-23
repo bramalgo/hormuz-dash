@@ -253,7 +253,7 @@ select.fi option{background:var(--bg3);}
   </div>
   <div class="topbar-right">
     <div style="font-family:var(--mono);font-size:10px;color:var(--muted);" id="lupd"></div>
-    <button class="btn" id="rbtn" onclick="doRefresh()">↻ Refresh</button>
+    <button class="btn" id="rbtn" onclick="doRefresh()" ontouchend="event.preventDefault();doRefresh()">↻ Refresh</button>
     <button class="btn" onclick="document.getElementById('nav-section').scrollIntoView({behavior:'smooth'})">NAV</button>
     <button class="btn btn-primary" onclick="doExport()">Export</button>
   </div>
@@ -1575,6 +1575,16 @@ if(ALERTS.enabled)startBotPolling();
   document.head.appendChild(s);
   /* auto-refresh every 15 min if in a real browser */
   setInterval(doRefresh,5*60*1000);
+  // Refresh when tab becomes visible again (iOS Safari backgrounding fix)
+  document.addEventListener('visibilitychange',function(){
+    if(document.visibilityState==='visible')doRefresh();
+  });
+  // Refresh on pageshow (iOS back/forward cache)
+  window.addEventListener('pageshow',function(e){
+    if(e.persisted)doRefresh();
+  });
+  // Refresh on window focus (desktop tab switching)
+  window.addEventListener('focus',doRefresh);
 })();
 </script>
 </body>
