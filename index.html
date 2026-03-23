@@ -1194,15 +1194,30 @@ async function doRefresh(){
   // ── Fallback: direct Yahoo fetch (may fail due to CORS) ──
   try{
     var [bD,wD,gD,sD,tD,btcD,dxyD,kD,nD,bdiD,ttfD]=await Promise.all([
-      fetchYahoo('BZ=F','60d'),fetchYahoo('CL=F','60d'),fetchYahoo('GC=F','5d'),
+      fetchYahoo('BZ=F','30d'),fetchYahoo('CL=F','30d'),fetchYahoo('GC=F','5d'),
       fetchYahoo('%5EGSPC','5d'),fetchYahoo('%5ETNX','5d'),fetchYahoo('BTC-USD','5d'),
       fetchYahoo('DX-Y.NYB','5d'),fetchYahoo('%5EKS11','5d'),fetchYahoo('%5EN225','5d'),
       fetchYahoo('%5EBDI','5d'),fetchYahoo('TTF=F','5d')
     ]);
     function last(a){return a&&a.length?a[a.length-1].v:null;}
     var fetched=[];
-    if(bD&&bD.length){D.brent=last(bD);D.brentH=bD.slice(-30);D.srcYahoo='ok';fetched.push('Brent');}
-    if(wD&&wD.length){D.wti=last(wD);D.wtiH=wD.slice(-30);fetched.push('WTI');}
+    if(bD&&bD.length){
+      D.brent=last(bD);
+      // Merge: keep seeded history from conflict start (28 Feb), append live data after
+      var CONFLICT_T=1772236800; // 28 Feb 2026 00:00 UTC
+      var seedPts=D.brentH.filter(function(p){return p.t<=CONFLICT_T+86400*3;}); // first 3 days seeded
+      var livePts=bD.filter(function(p){return p.t>seedPts[seedPts.length-1].t;});
+      D.brentH=seedPts.concat(livePts);
+      D.srcYahoo='ok';fetched.push('Brent');
+    }
+    if(wD&&wD.length){
+      D.wti=last(wD);
+      var CONFLICT_T=1772236800;
+      var seedPtsW=D.wtiH.filter(function(p){return p.t<=CONFLICT_T+86400*3;});
+      var livePtsW=wD.filter(function(p){return p.t>seedPtsW[seedPtsW.length-1].t;});
+      D.wtiH=seedPtsW.concat(livePtsW);
+      fetched.push('WTI');
+    }
     if(gD){D.gold=last(gD);fetched.push('Gold');}
     if(sD){D.spx=last(sD);fetched.push('SPX');}
     if(tD){D.tsy=last(tD);fetched.push('TSY');}
